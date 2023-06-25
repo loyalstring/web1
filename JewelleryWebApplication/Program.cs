@@ -31,13 +31,6 @@ var builder = WebApplication.CreateBuilder(args);
 //    options.UseSqlServer(connection));
 
 
-
-
-
-
-
-
-
 var connectionString = builder.Configuration.GetConnectionString("JewelleryWebApplicationContextConnection");
 builder.Services.AddDbContext<JewelleryWebApplicationContext>(options =>
     options.UseSqlServer(connectionString));

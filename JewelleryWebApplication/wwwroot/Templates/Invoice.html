@@ -1,6 +1,4 @@
-﻿
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -12,242 +10,234 @@
     <title>Document</title>
     <style>
         body {
-            background-color: #F6F6F6;
+            background-color: #f6f6f6;
             margin: 0;
             padding: 0;
             background-image: url("https://jewellerywebapplications.blob.core.windows.net/logo/backgroundinvoice.jpg");
             background-repeat: no-repeat;
             background-size: contain;
-            height: 3508px;
-            width: 2480px;
+            /* A4 width */
+            width: 210mm;
+            /* A4 height */
+            height: 297mm;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: center
+            align-items: center;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            font-size: 10px;
+            color: #1a4c2d;
+            font-weight: bold;
         }
 
         .billMainOuterBox {
-            min-width: 2100px;
+            width: 85%;
+            margin-top: 20%;
+            height: 55%;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px
-        }
-
-        .rectangle {
-            border: 2px solid Gold;
-            min-height: 1700px;
-            align-items: center;
-            width: 1800px;
             position: relative;
-            box-sizing: border-box;
-            padding: 50px 20px
-        }
-
-        p {
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            width: 100%;
-            display: flex;
+            flex-direction: column;
             justify-content: center;
-            align-items: center
-            /*margin-right: auto;*/
-            /*margin-left: auto;*/
+            align-items: center;
+            border: 1px solid gold;
+            box-sizing: border-box;
         }
 
-        .brand-section {
-            background-color: #0d1033;
-            padding: 10px 40px;
-        }
-
-        .logo {
-            width: 50%;
-        }
-
-        .row {
+        .personalDetailsOuterBox {
+            width: 100%;
+            height: 25%;
+            padding: 5px;
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 1px solid gold;
         }
 
-        .col-6 {
-            width: 50%;
-            flex: 0 0 auto;
-        }
-
-        .text-white {
-            color: #fff;
-        }
-
-        .company-details {
-            float: right;
-            text-align: right;
-        }
-
-        .body-section {
-            padding: 16px;
-            border: 1px solid gray;
-        }
-
-        .heading {
-            font-size: 20px;
-            margin-bottom: 08px;
-        }
-
-        .sub-heading {
-            color: #262626;
-            margin-bottom: 05px;
-        }
-
-        table {
-            background-color: #fff;
-            width: 100%;
-            height: 100%;
-            border-collapse: collapse;
-            grid-template-columns: repeat(9,1fr);
-        }
-
-            table thead tr {
-                border: 1px solid #gold;
-                background-color: #f2f2f2;
-            }
-
-            table td {
-                vertical-align: middle !important;
-                text-align: center;
-            }
-
-            table th, table td {
-                padding-top: 08px;
-                padding-bottom: 08px;
-            }
-
-        #lastTotalRow {
-            position: absolute;
-            left: 0;
-            bottom: 400px;
-            width: 100%;
-            display: grid;
-            grid-template-columns: 3fr repeat(4,1fr) 3fr;
-        }
-
-        #lastTotalRow1 {
-            position: absolute;
-            bottom: 180px;
-            width: 100%;
-            /*display: inline-table;*/
-        }
-
-        .table-bordered {
-            box-shadow: 0px 0px 5px 0.5px gold;
-        }
-
-            .table-bordered td, .table-bordered th {
+            .personalDetailsOuterBox hr {
+                width: 60%;
                 border: 1px solid gold;
             }
 
-        .text-right {
-            text-align: end;
+        .personalDetailsInnerBox {
+            width: 90%;
+            height: 100%;
+            margin: 5px;
+            /* border: 1.5px solid red; */
+            display: grid;
+            grid-template-columns: 2fr repeat(1, 1fr);
+            align-content: center;
+            list-style: none;
+            line-height: 20px;
+            padding: 5px;
+            text-transform: uppercase;
         }
 
-        .w-20 {
-            width: 20%;
+        .billDetailsTable {
+            width: 100%;
+            height: 60%;
+            /* border: 1px solid gold; */
         }
 
-        .float-right {
-            float: right;
+            .billDetailsTable table {
+                width: 100%;
+                height: 100%;
+                border-collapse: collapse;
+            }
+
+            .billDetailsTable th,
+            .billDetailsTable td {
+                padding: 10px;
+                border: 1px solid gold;
+                border-left: none;
+                margin: 0;
+            }
+
+            .billDetailsTable table tbody {
+                text-align: start;
+                vertical-align: top;
+            }
+
+            .billDetailsTable th:not(:first-child),
+            .billDetailsTable td:not(:first-child) {
+                border-left: none;
+            }
+
+            .billDetailsTable td:last-child,
+            .billDetailsTable th:last-child {
+                border-right: none;
+            }
+
+            .billDetailsTable tfoot {
+                border: 2px solid gold;
+                border-left: none;
+                border-right: none;
+            }
+
+        .gstAndTotalBox {
+            width: 100%;
+            height: 25%;
+            text-align: right;
+            line-height: 5px;
+            /* border: 2px solid green; */
+        }
+
+            .gstAndTotalBox p {
+                margin-inline-end: 10px;
+            }
+
+        .borderImage {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background-image: url("https://jewellerywebapplications.blob.core.windows.net/logo/borderImage.png");
+            background-repeat: no-repeat;
+            background-size: contain;
+            z-index: -1;
+            opacity: 1;
+        }
+
+        .topLeft {
+            margin-top: -2px;
+            top: 0;
+            left: 0;
+            transform: rotate(90deg);
+        }
+
+        .topRight {
+            margin-right: -2px;
+            top: 0;
+            right: 0;
+            transform: rotate(180deg);
+        }
+
+        .bottomLeft {
+            bottom: 0;
+            left: 0;
+            margin-left: -2px;
+        }
+
+        .bottomRight {
+            bottom: 0;
+            right: 0;
+            margin-right: -2px;
+            transform: rotate(270deg);
         }
     </style>
 </head>
+
 <body>
-
     <div class="billMainOuterBox">
-
-        <div class="rectangle">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-8">
-                        <h2 class="heading">Name.: XXXXNameXXX</h2>
-                        <p class="sub-heading">Address : XXXXcuraddressXXX </p>
-                        <p class="sub-heading">Mobile: XXXXmobileXXX </p>
-
-                    </div>
-                    <div class="col-4">
-                        <p class="sub-heading">INVOICE NO. -  </p>
-
-                        <p class="sub-heading">DATE : XXXXorderdateXXX </p>
-
-                        <p class="sub-heading">EMAIL: XXXXemailXXX </p>
-                    </div>
-                </div>
+        <div class="borderImage topLeft"></div>
+        <div class="borderImage topRight"></div>
+        <div class="borderImage bottomLeft"></div>
+        <div class="borderImage bottomRight"></div>
+        <div class="personalDetailsOuterBox">
+            <hr>
+            <div class="personalDetailsInnerBox">
+                <li>NAME - XXXXNameXXX</li>
+                <li>INVOICE NO - XXXXinvoiceXXX</li>
+                <li>ADDRESS - XXXXcuraddressXXX</li>
+                <li>DATE - XXXXorderdateXXX</li>
+                <li>MOBILE - XXXXmobileXXX</li>
+                <li style="text-transform: none;">EMAIL - XXXXemailXXX</li>
             </div>
-
-            <div class="col-lg-12">
-
-                <table class="border-1 table-bordered border-collapse: collapse;" style="border-color:gold;width:100%;">
-                    <thead style="text-align:center">
-                        <tr>
-                            <th class="w-10">HSN</th>
-                            <th class="w-25">PARTICULARS</th>
-                            <th class="w-5">PURITY</th>
-                            <th class="w-10">GR.WT.</th>
-                            <th class="w-10">STONE WT.</th>
-                            <th class="w-10">NET WT.</th>
-                            <th class="w-10">RATE/10GM</th>
-                            <th class="w-10">MAKING</th>
-                            <th class="w-20">TOTAL</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>XXXXhsncodeXXX</td>
-                            <td>XXXXproductnameXXX &nbsp;XXXXqtyXXX</td>
-                            <td>XXXXpurityXXX</td>
-                            <td>XXXXgrwtXXX</td>
-                            <td>XXXXstonewtXXX</td>
-                            <td>XXXXnetwtXXX</td>
-                            <td>66000</td>
-                            <td>100%</td>
-                            <td>114000</td>
-                        </tr>
-                        <tr id="lastTotalRow">
-                            <td colspan="3">TOTAL SALES AMOUNT</td>
-                            <td>12.00</td>
-                            <td>9.00</td>
-                            <td>8.000</td>
-                            <td>9.00</td>
-                            <td>8.000</td>
-
-                        </tr>
-
-                    </tbody>
-                </table>
-                <br>
-
-
-                <div class="row" id="lastTotalRow1">
-                    <div class="col-9">
-
-                    </div>
-                    <div class="col-3">
-                        <h5 class="heading">CGST 1.5 % -  </h5>
-                        <h5 class="heading">SGST 1.5 % - </h5>
-                        <h5 class="heading">TOTAL TAX - </h5>
-                        <br />
-                        <h4 class="heading">NET AMOUNT- 133466</h4>
-                        <h4 class="heading">CASH - 166778</h4>
-                    </div>
-                </div>
-
-            </div>
-
+            <hr>
+        </div>
+        <div class="billDetailsTable">
+            <table>
+                <thead>
+                    <tr>
+                        <th>HSN</th>
+                        <th>PARTICULARS</th>
+                        
+                        <th>PURITY</th>
+                        <th>GR.WT.</th>
+                        <th>STONE WT.</th>
+                        <th>NET WT.</th>
+                        <th>RATE/10GM</th>
+                        <th>MAKING</th>
+                        <th>TOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>7113</td>
+                        <td>XXXXproductnameXXX XXXXqtyXXX</td>
+                        <td>XXXXpurityXXX</td>
+                        <td>XXXXgrwtXXX</td>
+                        <td>XXXXstonewtXXX</td>
+                        <td>XXXXnetwtXXX</td>
+                        <td>XXXXrateXXX</td>
+                        <td>XXXXmkpercXXX</td>
+                        <td>XXXXtotalXXX</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3">TOTAL SLAES AMOUNT</td>
+                        <td>XXXXtotalgrwtXXX</td>
+                        <td>XXXXstonewtXXX</td>
+                        <td>XXXXtotalnetwtXXX</td>
+                        <td colspan="3" style="text-align:right">XXXXtotalamountXXX</td>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
 
+        <div class="gstAndTotalBox">
+            <p>CGST 1.5 % - XXXcgstXXX</p>
+            <p>SGST 1.5 % - XXXsgstXXX</p>
+            <p style="margin-bottom: 20px;">TOTAL TAX - XXXtotaltaxXXX</p>
+            <p>NET AMOUNT- XXXnetamtXXX</p>
+            <p>CASH - XXXnetamtXXX</p>
+        </div>
     </div>
 
 
+    </div>
+    </div>
 </body>
 
 </html>

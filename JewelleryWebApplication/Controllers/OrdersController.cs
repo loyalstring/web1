@@ -26,8 +26,10 @@ using DocumentFormat.OpenXml.Office2010.ExcelAc;
 using iText.Commons.Actions.Data;
 using JewelleryWebApplication.Models.APIModel;
 using System.IO;
-using iTextSharp.text.pdf.qrcode;
-using IronPdf;
+using JewelleryWebApplication.Migrations;
+using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.Extensions.Azure;
 
 namespace JewelleryWebApplication.Controllers
 {
@@ -162,6 +164,7 @@ namespace JewelleryWebApplication.Controllers
             }
             return Ok(new { data = "No Data" });
         }
+
         [HttpPost("InsertOrders")]
         public async Task<IActionResult> InsertOrders(tblOrder model)
         {
@@ -181,96 +184,99 @@ namespace JewelleryWebApplication.Controllers
                 order.OrderStatus = model.OrderStatus;
                    await  _ordersRepository.InsertAsync(order);
             
-              await sendEmail1pdf(order.Id,order.Product_id, order.Customer_Id, order.OrderStatus);
-
-              // await sendEmail(order.Id,order.Product_id,order.Customer_Id,order.OrderStatus);
+             // await sendEmail1pdf(order.Id,order.Product_id, order.Customer_Id, order.OrderStatus);
+            //  await  sendEmail(order.Id, order.Product_id, order.Customer_Id, order.OrderStatus);
+               await sendEmail(order.Id,order.Product_id,order.Customer_Id,order.OrderStatus);
                 return Ok(new { Status = "Success", data = order });
             }
             return BadRequest();
         }
       
-        private async Task sendEmail1pdf(int Id, int Productid, int customerid, string Status)
-        {
+        //private async Task sendEmail1pdf(int Id, int Productid, int customerid, string Status)
+        //{
           
-            string Message = "<p>Your Order  -" + Status + " Completed Sucessfully</p>";
-            var orderdata = _ordersRepository.All().Where(x => x.Id == Id).FirstOrDefault();
-            var user = _customerDetailsRepository.All().Where(x => x.Id == customerid).FirstOrDefault();
-            var productdata = _productrepository.All().Where(x => x.Id == Productid).FirstOrDefault();
-            if (orderdata.OrderStatus == "Confirm")
-            {
-                var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderConfirmation.html");
-                var template = System.IO.File.ReadAllText(viewPath);
-                template = template.Replace("XXXABCXXX", Message);
-                template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
-                template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
-                template = template.Replace("XXXXemailXXX", user.Email);
-                template = template.Replace("XXXXpincodeXXX", user.PinCode);
-                template = template.Replace("XXXXimagesXXX", productdata.Images.TrimEnd(','));
-                template = template.Replace("XXXXorderXXX", user.OrderId);
-                template = template.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
-                template = template.Replace("XXXXmobileXXX", user.Mobile);
-                template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
-                template = template.Replace("XXXXsizeXXX", productdata.Size);
-                template = template.Replace("XXXXvalueXXX", user.OrderValue);
-                template = template.Replace("XXXStatusXXX", user.OrderStatus);
+        //    string Message = "<p>Your Order  -" + Status + " Completed Sucessfully</p>";
+        //    var orderdata = _ordersRepository.All().Where(x => x.Id == Id).FirstOrDefault();
+        //    var user = _customerDetailsRepository.All().Where(x => x.Id == customerid).FirstOrDefault();
+        //    var productdata = _productrepository.All().Where(x => x.Id == Productid).FirstOrDefault();
+        //    var data = "";
+        //    var imagePath = productdata.Images.Split(',');
+        //    data = "https://jewellerywebapplications.blob.core.windows.net/images/" + imagePath[0];
+        //    if (orderdata.OrderStatus == "Confirm")
+        //    {
+        //        var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderConfirmation.html");
+        //        var template = System.IO.File.ReadAllText(viewPath);
+        //        template = template.Replace("XXXABCXXX", Message);
+        //        template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
+        //        template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+        //        template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
+        //        template = template.Replace("XXXXemailXXX", user.Email);
+        //        template = template.Replace("XXXXpincodeXXX", user.PinCode);
+        //        template = template.Replace("XXXXimagesXXX", data);
+        //        template = template.Replace("XXXXorderXXX", user.OrderId);
+        //        template = template.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
+        //        template = template.Replace("XXXXmobileXXX", user.Mobile);
+        //        template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
+        //        template = template.Replace("XXXXsizeXXX", productdata.Size);
+        //        template = template.Replace("XXXXvalueXXX", user.OrderValue);
+        //        template = template.Replace("XXXStatusXXX", user.OrderStatus);
 
-                await _emailSender.SendEmailAsync(user.Email, "Order Confirmation", $"" + template + "");
-            }
-            else if (orderdata.OrderStatus == "Delivered")
-            {
-                var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
-             //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
-                var template = System.IO.File.ReadAllText(viewPath);
-                var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "OrderConfirmation.html");
-                var template1 = System.IO.File.ReadAllText(viewPath1);
-                //    var template1 = System.IO.File.ReadAllText(viewPath1);
-                template = template.Replace("XXXABCXXX", Message);
+        //        await _emailSender.SendEmailAsync(user.Email, "Order Confirmation", $"" + template + "");
+        //    }
+        //    else if (orderdata.OrderStatus == "Delivered")
+        //    {
+        //        var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+        //     //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+        //        var template = System.IO.File.ReadAllText(viewPath);
+        //        var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "OrderConfirmation.html");
+        //        var template1 = System.IO.File.ReadAllText(viewPath1);
+        //        //    var template1 = System.IO.File.ReadAllText(viewPath1);
+        //        template = template.Replace("XXXABCXXX", Message);
              
-                template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
-                template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
-                template = template.Replace("XXXXemailXXX", user.Email);
-                template = template.Replace("XXXXpincodeXXX", user.PinCode);
-                template = template.Replace("XXXXimagesXXX", productdata.Images.TrimEnd(','));
-                template = template.Replace("XXXXorderXXX", user.OrderId);
-                template1 = template1.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
-                template1 = template1.Replace("XXXXmobileXXX", user.Mobile);
-                template1 = template1.Replace("XXXXproductnameXXX", productdata.Product_Name);
-                template1 = template1.Replace("XXXXsizeXXX", productdata.Size);
-                template1 = template1.Replace("XXXXvalueXXX", user.OrderValue);
-                template1 = template1.Replace("XXXStatusXXX", user.OrderStatus);
-                template = template.Replace("XXXXpincodeXXX", user.PinCode);
-                template = template.Replace("XXXXimagesXXX", productdata.Images.TrimEnd(','));
-                byte[] pdfBytes = ConvertHtmlToPdf(template);
-                var attachment = new Attachment(new MemoryStream(pdfBytes), "pdf_attachment.pdf", "application/pdf");
-                var message = new MailMessage("info@mkgharejewellers.com", user.Email, "PDF Attachment", "Please find the attached PDF.");
-                message.Attachments.Add(attachment);
-                SendEmailWithAttachment(pdfBytes, template1, orderdata.Id);
-              //  await _emailSender.SendEmailAsync(user.Email, "Order Delivered", $"" + template1 + message+"");
-            }
-            else if (orderdata.OrderStatus == "Order is On the way")
-            {
-                var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "orderOnTheWay.html");
-                var template = System.IO.File.ReadAllText(viewPath);
-                template = template.Replace("XXXABCXXX", Message);
-                template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
-                template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
-                template = template.Replace("XXXXemailXXX", user.Email);
-                template = template.Replace("XXXXpincodeXXX", user.PinCode);
-                template = template.Replace("XXXXimagesXXX", productdata.Images.TrimEnd(','));
-                template = template.Replace("XXXXorderXXX", user.OrderId);
-                template = template.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
-                template = template.Replace("XXXXmobileXXX", user.Mobile);
-                template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
-                template = template.Replace("XXXXsizeXXX", productdata.Size);
-                template = template.Replace("XXXXvalueXXX", user.OrderValue);
-                template = template.Replace("XXXStatusXXX", user.OrderStatus);
+        //        template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
+        //        template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+        //        template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
+        //        template = template.Replace("XXXXemailXXX", user.Email);
+        //        template = template.Replace("XXXXpincodeXXX", user.PinCode);
+        //        template = template.Replace("XXXXimagesXXX", productdata.Images.TrimEnd(','));
+        //        template = template.Replace("XXXXorderXXX", user.OrderId);
+        //        template1 = template1.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
+        //        template1 = template1.Replace("XXXXmobileXXX", user.Mobile);
+        //        template1 = template1.Replace("XXXXproductnameXXX", productdata.Product_Name);
+        //        template1 = template1.Replace("XXXXsizeXXX", productdata.Size);
+        //        template1 = template1.Replace("XXXXvalueXXX", user.OrderValue);
+        //        template1 = template1.Replace("XXXStatusXXX", user.OrderStatus);
+        //        template = template.Replace("XXXXpincodeXXX", user.PinCode);
+        //        template = template.Replace("XXXXimagesXXX", productdata.Images.TrimEnd(','));
+        //        byte[] pdfBytes = ConvertHtmlToPdf(template);
+        //        var attachment = new Attachment(new MemoryStream(pdfBytes), "pdf_attachment.pdf", "application/pdf");
+        //        var message = new MailMessage("info@mkgharejewellers.com", user.Email, "PDF Attachment", "Please find the attached PDF.");
+        //        message.Attachments.Add(attachment);
+        //        SendEmailWithAttachment(pdfBytes, template1, orderdata.Id);
+        //      //  await _emailSender.SendEmailAsync(user.Email, "Order Delivered", $"" + template1 + message+"");
+        //    }
+        //    else if (orderdata.OrderStatus == "Order is On the way")
+        //    {
+        //        var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "orderOnTheWay.html");
+        //        var template = System.IO.File.ReadAllText(viewPath);
+        //        template = template.Replace("XXXABCXXX", Message);
+        //        template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
+        //        template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+        //        template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
+        //        template = template.Replace("XXXXemailXXX", user.Email);
+        //        template = template.Replace("XXXXpincodeXXX", user.PinCode);
+        //        template = template.Replace("XXXXimagesXXX", productdata.Images.TrimEnd(','));
+        //        template = template.Replace("XXXXorderXXX", user.OrderId);
+        //        template = template.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
+        //        template = template.Replace("XXXXmobileXXX", user.Mobile);
+        //        template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
+        //        template = template.Replace("XXXXsizeXXX", productdata.Size);
+        //        template = template.Replace("XXXXvalueXXX", user.OrderValue);
+        //        template = template.Replace("XXXStatusXXX", user.OrderStatus);
 
-                await _emailSender.SendEmailAsync(user.Email, "YOUR ORDER IS ON THE WAY!", $"" + template + "");
-            }
-        }
+        //        await _emailSender.SendEmailAsync(user.Email, "YOUR ORDER IS ON THE WAY!", $"" + template + "");
+        //    }
+        //}
     
         //public void SendEmailWithAttachment(byte[] attachmentBytes)
         //{
@@ -339,6 +345,193 @@ namespace JewelleryWebApplication.Controllers
 
             return BadRequest();
         }
+        private async Task sendEmail(int Id, int Productid, int customerid, string Status)
+        {
+            string Message = "<p>Your Order  -" + Status + "  Sucessfully</p>";
+            var orderdata = _ordersRepository.All().Where(x => x.Id == Id).FirstOrDefault();
+            var user = _customerDetailsRepository.All().Where(x => x.Id == customerid).FirstOrDefault();
+            var productdata = _productrepository.All().Where(x => x.Id == Productid).FirstOrDefault();
+            var puritydata = _purityRepository.All().Where(x => x.Id == productdata.PurityId).FirstOrDefault();
+           var netGoldRate= (Convert.ToDecimal(productdata.NetWt) * Convert.ToDecimal(puritydata.TodaysRate)) / 10;
+            var makingCharges1 = Convert.ToDecimal(productdata.NetWt) * Convert.ToDecimal(productdata.Making_per_gram);
+            var makingCharges2 = (netGoldRate * Convert.ToDecimal(productdata.Making_Percentage)) / 100;
+            var makingCharges3 = Convert.ToDecimal(productdata.Making_Fixed_Amt);
+            var makingCharges4= (Convert.ToDecimal(puritydata.TodaysRate) * Convert.ToDecimal(productdata.Making_Fixed_Wastage)) / 10;
+            var GST = 0.03;
+           decimal grossTotalRate= 1;
+            if (productdata.MRP != 0)
+            {
+                grossTotalRate = productdata.MRP;
+            }
+               grossTotalRate= netGoldRate + makingCharges1 + makingCharges2 + makingCharges3 + makingCharges4 + Convert.ToDecimal(productdata.StoneAmount);
+            var GSTAdded= Convert.ToDecimal(GST)* grossTotalRate;
+            var finalPrice = grossTotalRate + GSTAdded;
+            if ( productdata.MRP != 0)
+            {
+               finalPrice = productdata.MRP;
+            }
+            //var productprice = (Convert.ToInt32(puritydata.TodaysRate) / 10) * productdata.NetWt;
+            //var makingperc = productprice * Convert.ToInt32(productdata.Making_Percentage) / 100;
+            //var total = productprice + makingperc;
+            var cgst = 1.5;
+            var sgst = 1.5;
+            // var igst = 3;
+            var totalsaleamount = Convert.ToDecimal(grossTotalRate * orderdata.Qty);
+            var cgstamount = Convert.ToDecimal(cgst) * totalsaleamount / 100;
+            var sgstamount = Convert.ToDecimal(sgst) * totalsaleamount / 100;
+            // var igstamount = Convert.ToDecimal(igst) * totalsaleamount / 100;
+            var totalnetwt = productdata.NetWt * orderdata.Qty;
+            var totalgrwt = productdata.grosswt * orderdata.Qty;
+            var totalstwt = Convert.ToDecimal(productdata.StoneWeight) * (Convert.ToDecimal(orderdata.Qty));
+
+            var totaltax = cgstamount + sgstamount;
+            var netamount = totalsaleamount + Convert.ToDecimal(totaltax);
+
+            var data = "";
+            var imagePath = productdata.Images.Split(',');
+            data = "https://jewellerywebapplications.blob.core.windows.net/images/" + imagePath[0];
+
+            if (orderdata.OrderStatus == "Paid")
+            {
+                var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderConfirmation.html");
+                var template = System.IO.File.ReadAllText(viewPath);
+                template = template.Replace("XXXABCXXX", Message);
+                template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
+                template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template = template.Replace("XXXXcuraddressXXX", user.PerAdd);
+                template = template.Replace("XXXXemailXXX", user.Email);
+                template = template.Replace("XXXXpincodeXXX", user.PinCode);
+                template = template.Replace("XXXXquantityXXX", productdata.Quantity.ToString());
+                template = template.Replace("XXXXsizeXXX", productdata.Size);
+                template = template.Replace("XXXXimagesXXX", data);
+                template = template.Replace("XXXXorderXXX", user.OrderId);
+                template = template.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
+                template = template.Replace("XXXXmobileXXX", user.Mobile);
+                template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
+                template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
+                template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
+                template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
+                template = template.Replace("XXXpriceXXX", orderdata.Price.ToString());
+                template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
+                await _emailSender.SendEmailAsync(user.Email, "Order Confirmation", $"" + template + "");
+            }
+            if (orderdata.OrderStatus == "Delivered")
+            {
+                var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderDelivered.html");
+                //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+                var template = System.IO.File.ReadAllText(viewPath);
+                var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+                var template1 = System.IO.File.ReadAllText(viewPath1);
+                //    var template1 = System.IO.File.ReadAllText(viewPath1);
+                template = template.Replace("XXXABCXXX", Message);
+                template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
+                template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
+                template = template.Replace("XXXXemailXXX", user.Email);
+                template = template.Replace("XXXXpincodeXXX", user.PinCode);
+                template = template.Replace("XXXXquantityXXX", productdata.Quantity.ToString());
+                template = template.Replace("XXXXsizeXXX", productdata.Size);
+                template = template.Replace("XXXXimagesXXX", data);
+                template = template.Replace("XXXXorderXXX", orderdata.Id.ToString());
+                template = template.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
+                template = template.Replace("XXXXmobileXXX", user.Mobile);
+                template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
+                template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
+                template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
+                template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
+                template = template.Replace("XXXordervalueXXX", orderdata.ReceivedAmt.ToString());
+                template = template.Replace("XXXpriceXXX", orderdata.Price.ToString());
+                template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
+                template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template1 = template1.Replace("XXXXcuraddressXXX", user.PerAdd);
+                template1 = template1.Replace("XXXXemailXXX", user.Email);
+                template1 = template1.Replace("XXXXpincodeXXX", user.PinCode);
+                template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template1 = template1.Replace("XXXXorderXXX", user.OrderId);
+                template1 = template1.Replace("XXXXorderdateXXX", user.LastUpdated.ToString("dd/MM/yyyy"));
+                template1 = template1.Replace("XXXXmobileXXX", user.Mobile);
+                template1 = template1.Replace("XXXXproductnameXXX", productdata.Product_Name);
+                template1 = template1.Replace("XXXXhsncodeXXX", productdata.hsn_code);
+                template1 = template1.Replace("XXXXqtyXXX", orderdata.Qty.ToString());
+                template1 = template1.Replace("XXXXpurityXXX", productdata.purity.ToString());
+                template1 = template1.Replace("XXXXgrwtXXX", productdata.grosswt.ToString());
+                template1 = template1.Replace("XXXXstonewtXXX", productdata.StoneWeight.ToString());
+                template1 = template1.Replace("XXXXnetwtXXX", productdata.NetWt.ToString());
+                var makingchrg="";
+                if (productdata.Making_Percentage != null && productdata.Making_Percentage != "0")
+                {
+                    makingchrg = productdata.Making_Percentage;
+                    template1 = template1.Replace("XXXXmkpercXXX", productdata.Making_Percentage.ToString()+"%");
+                }
+                else if (productdata.Making_per_gram != null && productdata.Making_per_gram != "0")
+                {
+                    makingchrg = productdata.Making_per_gram;
+                    template1 = template1.Replace("XXXXmkpercXXX", productdata.Making_per_gram.ToString());
+                }
+                else if (productdata.Making_Fixed_Amt != null && productdata.Making_Fixed_Amt != "0")
+                {
+                    makingchrg = productdata.Making_Fixed_Amt;
+                    template1 = template1.Replace("XXXXmkpercXXX", productdata.Making_Fixed_Amt.ToString());
+                }
+                else if (productdata.Making_Fixed_Wastage != null && productdata.Making_Fixed_Wastage != "0")
+                {
+                    makingchrg = productdata.Making_Fixed_Wastage;
+                    template1 = template1.Replace("XXXXmkpercXXX", productdata.Making_Fixed_Wastage.ToString());
+                }
+                template1 = template1.Replace("XXXXsizeXXX", productdata.Size);
+                template1 = template1.Replace("XXXXrateXXX", puritydata.TodaysRate);
+                template1 = template1.Replace("XXXXtotalamountXXX", totalsaleamount.ToString());
+                template1 = template1.Replace("XXXXvalueXXX", user.OrderValue);
+                template1 = template1.Replace("XXXStatusXXX", user.OrderStatus);
+                template1 = template1.Replace("XXXnetamtXXX", netamount.ToString());
+                template1 = template1.Replace("XXXcgstXXX", cgstamount.ToString());
+                template1 = template1.Replace("XXXsgstXXX", sgstamount.ToString());
+                template1 = template1.Replace("XXXtotaltaxXXX", totaltax.ToString());
+                template1 = template1.Replace("XXXXpincodeXXX", user.PinCode);
+                template1 = template1.Replace("XXXXtotalXXX", grossTotalRate.ToString());
+                template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
+                template1 = template1.Replace("XXXXtotalnetwtXXX", totalnetwt.ToString());
+                template1 = template1.Replace("XXXXtotalgrwtXXX", totalgrwt.ToString());
+                template1 = template1.Replace("XXXXtotalstwtXXX", totalstwt.ToString());
+                //template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
+                byte[] pdfBytes = ConvertHtmlToPdf(template1);
+              
+                var attachment = new Attachment(new MemoryStream(pdfBytes), "Invoice.pdf", "application/pdf");
+                var message = new MailMessage("info@mkgharejewellers.com", user.Email, "", "Please find the attached PDF.");
+                message.Attachments.Add(attachment);
+                SendEmailWithAttachment(pdfBytes, template, orderdata.Id);
+            }
+        }
+
+        public byte[] ConvertHtmlToPdf(string htmlContent)
+        {
+            var renderer = new HtmlToPdf();
+            var pdf = renderer.RenderHtmlAsPdf(htmlContent);
+            return pdf.BinaryData;
+        }
+        
+     
+        public void SendEmailWithAttachment(byte[] attachmentBytes, string template, int id)
+        {
+            var orderdata = _ordersRepository.All().Where(x => x.Id == id).FirstOrDefault();
+            var user = _customerDetailsRepository.All().Where(x => x.Id == orderdata.Customer_Id).FirstOrDefault();
+            using (var client = new SmtpClient("smtp.hostinger.com", 587))
+            {
+                client.EnableSsl = true;
+                client.UseDefaultCredentials = false;
+                client.Credentials = new NetworkCredential("info@mkgharejewellers.com", "Mkghare@123");
+
+                var message = new MailMessage("info@mkgharejewellers.com", user.Email, "order delivered", template + "please check attached pdf ");
+
+                var attachment = new Attachment(new MemoryStream(attachmentBytes), "Invoice.pdf", "application/pdf");
+                message.Attachments.Add(attachment);
+                message.IsBodyHtml = true;
+                message.BodyEncoding = Encoding.UTF8;
+
+                client.Send(message);
+            }
+        }
+
 
         [HttpPost("UpdateRates")]
         public async Task<IActionResult> UpdateRates(tblRates model)
@@ -443,129 +636,7 @@ namespace JewelleryWebApplication.Controllers
             }
         }
 
-        private async Task sendEmail(int Id, int Productid, int customerid, string Status)
-        {
-
-            string Message = "<p>Your Order  -" + Status + "  Sucessfully</p>";
-            var orderdata = _ordersRepository.All().Where(x => x.Id == Id).FirstOrDefault();
-            var user = _customerDetailsRepository.All().Where(x => x.Id == customerid).FirstOrDefault();
-            var productdata = _productrepository.All().Where(x => x.Id == Productid).FirstOrDefault();
-            var data = "";
-
-            var imagePath = productdata.Images.Split(',');
-            data = "https://jewellerywebapplications.blob.core.windows.net/images/" + imagePath[0];
-
-            if (orderdata.OrderStatus == "Paid")
-            {
-                var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderConfirmation.html");
-                var template = System.IO.File.ReadAllText(viewPath);
-                template = template.Replace("XXXABCXXX", Message);
-                template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
-                template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
-                template = template.Replace("XXXXemailXXX", user.Email);
-                template = template.Replace("XXXXpincodeXXX", user.PinCode);
-                template = template.Replace("XXXXquantityXXX", productdata.Quantity.ToString());
-                template = template.Replace("XXXXsizeXXX", productdata.Size);
-                template = template.Replace("XXXXimagesXXX", data);
-                template = template.Replace("XXXXorderXXX", user.OrderId);
-                template = template.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
-                template = template.Replace("XXXXmobileXXX", user.Mobile);
-                template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
-                template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
-                template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
-                template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
-                template = template.Replace("XXXpriceXXX", orderdata.Price.ToString());
-                template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
-                await _emailSender.SendEmailAsync(user.Email, "Order Confirmation", $"" + template + "");
-            }
-            if (orderdata.OrderStatus == "Delivered")
-            {
-                var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderDelivered.html");
-                //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
-                var template = System.IO.File.ReadAllText(viewPath);
-                var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
-                var template1 = System.IO.File.ReadAllText(viewPath1);
-                //    var template1 = System.IO.File.ReadAllText(viewPath1);
-                template = template.Replace("XXXABCXXX", Message);
-                template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
-                template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
-                template = template.Replace("XXXXemailXXX", user.Email);
-                template = template.Replace("XXXXpincodeXXX", user.PinCode);
-                template = template.Replace("XXXXquantityXXX", productdata.Quantity.ToString());
-                template = template.Replace("XXXXsizeXXX", productdata.Size);
-                template = template.Replace("XXXXimagesXXX", data);
-                template = template.Replace("XXXXorderXXX", user.OrderId);
-                template = template.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
-                template = template.Replace("XXXXmobileXXX", user.Mobile);
-                template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
-                template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
-                template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
-                template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
-                template = template.Replace("XXXpriceXXX", orderdata.Price.ToString());
-                template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
-                template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                template1 = template1.Replace("XXXXcuraddressXXX", user.CurrAdd);
-                template1 = template1.Replace("XXXXemailXXX", user.Email);
-                template1 = template1.Replace("XXXXpincodeXXX", user.PinCode);
-                template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                template1 = template1.Replace("XXXXorderXXX", user.OrderId);
-                template1 = template1.Replace("XXXXorderdateXXX", user.LastUpdated.ToString("dd/MM/yyyy"));
-                template1 = template1.Replace("XXXXmobileXXX", user.Mobile);
-                template1 = template1.Replace("XXXXproductnameXXX", productdata.Product_Name);
-                template1 = template1.Replace("XXXXhsncodeXXX", productdata.hsn_code);
-                template1 = template1.Replace("XXXXqtyXXX", orderdata.Qty.ToString());
-                template1 = template1.Replace("XXXXpurityXXX", productdata.purity.ToString());
-                template1 = template1.Replace("XXXXgrwtXXX", productdata.grosswt.ToString());
-                template1 = template1.Replace("XXXXstonewtXXX", productdata.StoneWeight.ToString());
-                template1 = template1.Replace("XXXXnetwtXXX", productdata.NetWt.ToString());
-                template1 = template1.Replace("XXXXmkfxedXXX", productdata.Making_Fixed_Amt.ToString());
-                template1 = template1.Replace("XXXXmkpercXXX", productdata.Making_Percentage.ToString());
-                template1 = template1.Replace("XXXXmkpergmXXX", productdata.Making_per_gram.ToString());
-                template1 = template1.Replace("XXXXsizeXXX", productdata.Size);
-                template1 = template1.Replace("XXXXvalueXXX", user.OrderValue);
-                template1 = template1.Replace("XXXStatusXXX", user.OrderStatus);
-               // template1 = template1.Replace("XXXStatusXXX", user.OrderStatus);
-                template1 = template1.Replace("XXXXpincodeXXX", user.PinCode);
-
-        
-                byte[] pdfBytes = ConvertHtmlToPdf(template1);
-                var attachment = new Attachment(new MemoryStream(pdfBytes), "Invoice.pdf", "application/pdf");
-                var message = new MailMessage("info@mkgharejewellers.com", user.Email, "", "Please find the attached PDF.");
-                message.Attachments.Add(attachment);
-                SendEmailWithAttachment(pdfBytes, template1, orderdata.Id);
-            }
-        }
-
-        public byte[] ConvertHtmlToPdf(string htmlContent)
-        {
-            var renderer = new HtmlToPdf();
-            var pdf = renderer.RenderHtmlAsPdf(htmlContent);
-            return pdf.BinaryData;
-        }
-        public void SendEmailWithAttachment(byte[] attachmentBytes, string template1, int id)
-        {
-            var orderdata = _ordersRepository.All().Where(x => x.Id == id).FirstOrDefault();
-            var user = _customerDetailsRepository.All().Where(x => x.Id == orderdata.Customer_Id).FirstOrDefault();
-            using (var client = new SmtpClient("smtp.hostinger.com", 587))
-            {
-                client.EnableSsl = true;
-                client.UseDefaultCredentials = false;
-                client.Credentials = new NetworkCredential("info@mkgharejewellers.com", "Mkghare@123");
-
-                var message = new MailMessage("info@mkgharejewellers.com", user.Email, "order delivered", template1 + "please check attached pdf ");
-
-                var attachment = new Attachment(new MemoryStream(attachmentBytes), "pdf_attachment.pdf", "application/pdf");
-                message.Attachments.Add(attachment);
-                message.IsBodyHtml = true;
-                message.BodyEncoding = Encoding.UTF8;
-
-                client.Send(message);
-            }
-        }
-
-
+      
         [HttpGet("PaymentStatus")]
         public async Task<IActionResult> PaymentStatus(PaymentStatusViewModel model)
         {
