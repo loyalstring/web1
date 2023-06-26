@@ -52,7 +52,7 @@ var service = builder.Services;
 service.Configure<AzureOptions>(builder.Configuration.GetSection("Azure"));
 
 
-builder.Services.AddSwaggerGen();
+//builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
