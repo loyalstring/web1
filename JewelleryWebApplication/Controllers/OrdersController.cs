@@ -1,4 +1,4 @@
-﻿using iTextSharp.text.pdf;
+﻿
 using JewelleryWebApplication.Interface;
 using JewelleryWebApplication.Models;
 using JewelleryWebApplication.Models.ViewModel;
@@ -30,6 +30,7 @@ using JewelleryWebApplication.Migrations;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.Extensions.Azure;
+using IronPdf.Rendering;
 
 namespace JewelleryWebApplication.Controllers
 {
@@ -520,7 +521,10 @@ namespace JewelleryWebApplication.Controllers
         {
             var renderer = new HtmlToPdf();
             var pdf = renderer.RenderHtmlAsPdf(htmlContent);
-            return pdf.BinaryData;
+            var pdfDocument = new PdfDocument(htmlContent);
+            pdfDocument.RemoveSignatures();
+             return pdfDocument.Stream.ToArray();
+          //  return pdf.BinaryData;
         }
         
      
