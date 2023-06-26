@@ -383,7 +383,7 @@ namespace JewelleryWebApplication.Controllers
                         product.ImageList5 = HttpContext.Request.Form["ImageList5"];
                         product.CollectionId= Convert.ToInt32(HttpContext.Request.Form["CollectionId"]);
                         product.OnlineStatus = "Active";
-
+                    
                         li.Add(product);
                     }
 
@@ -726,6 +726,7 @@ namespace JewelleryWebApplication.Controllers
                         product.ImageList5 = model.ImageList5;
 
                         product.ItemCode = model.ItemCode;
+                        product.CreatedOn = model.CreatedOn;
 
                         product.Images = model.Images;
                         product.OnlineStatus = "Active";

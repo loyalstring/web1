@@ -352,41 +352,73 @@ namespace JewelleryWebApplication.Controllers
             var user = _customerDetailsRepository.All().Where(x => x.Id == customerid).FirstOrDefault();
             var productdata = _productrepository.All().Where(x => x.Id == Productid).FirstOrDefault();
             var puritydata = _purityRepository.All().Where(x => x.Id == productdata.PurityId).FirstOrDefault();
-           var netGoldRate= (Convert.ToDecimal(productdata.NetWt) * Convert.ToDecimal(puritydata.TodaysRate)) / 10;
+            decimal totalsaleamount;
+            decimal netamount;
+            decimal cgstamount;
+            decimal totalstwt;
+            decimal totalnetwt;
+            decimal totaltax;
+            decimal sgstamount;
+            decimal Making_Percentage;
+            decimal Making_per_gram;
+            decimal Making_Fixed_Amt;
+            decimal totalgrwt;
+            decimal grossTotalRate;
+            var makingchrg="";
+            decimal MRP;
+            if (productdata.MRP != 0)
+            {
+                var cgst = 1.5;
+                var sgst = 1.5;
+              
+                MRP = Convert.ToDecimal(productdata.MRP) * Convert.ToDecimal(orderdata.Qty);
+                cgstamount = (Convert.ToDecimal(cgst) * MRP) / 100;
+                sgstamount = (Convert.ToDecimal(sgst) * MRP) / 100;
+                totaltax = cgstamount + sgstamount;
+                totalsaleamount = (MRP - totaltax);
+                totalnetwt = productdata.NetWt;
+               var finalPrice = MRP;
+                 grossTotalRate = totalsaleamount;
+                netamount = finalPrice;
+                totalgrwt = productdata.grosswt*orderdata.Qty;
+                totalstwt = Convert.ToDecimal(productdata.StoneWeight)*orderdata.Qty;
+                Making_Percentage = 0;
+                Making_per_gram=0;
+                Making_Fixed_Amt = 0;
+                 makingchrg = "";
+            }
+            else
+            {
+            var netGoldRate= (Convert.ToDecimal(productdata.NetWt) * Convert.ToDecimal(puritydata.TodaysRate)) / 10;
             var makingCharges1 = Convert.ToDecimal(productdata.NetWt) * Convert.ToDecimal(productdata.Making_per_gram);
             var makingCharges2 = (netGoldRate * Convert.ToDecimal(productdata.Making_Percentage)) / 100;
             var makingCharges3 = Convert.ToDecimal(productdata.Making_Fixed_Amt);
             var makingCharges4= (Convert.ToDecimal(puritydata.TodaysRate) * Convert.ToDecimal(productdata.Making_Fixed_Wastage)) / 10;
             var GST = 0.03;
-           decimal grossTotalRate= 1;
-            if (productdata.MRP != 0)
-            {
-                grossTotalRate = productdata.MRP;
-            }
+            grossTotalRate= 1;
+            
                grossTotalRate= netGoldRate + makingCharges1 + makingCharges2 + makingCharges3 + makingCharges4 + Convert.ToDecimal(productdata.StoneAmount);
             var GSTAdded= Convert.ToDecimal(GST)* grossTotalRate;
             var finalPrice = grossTotalRate + GSTAdded;
-            if ( productdata.MRP != 0)
-            {
-               finalPrice = productdata.MRP;
-            }
+        
             //var productprice = (Convert.ToInt32(puritydata.TodaysRate) / 10) * productdata.NetWt;
             //var makingperc = productprice * Convert.ToInt32(productdata.Making_Percentage) / 100;
             //var total = productprice + makingperc;
             var cgst = 1.5;
             var sgst = 1.5;
             // var igst = 3;
-            var totalsaleamount = Convert.ToDecimal(grossTotalRate * orderdata.Qty);
-            var cgstamount = Convert.ToDecimal(cgst) * totalsaleamount / 100;
-            var sgstamount = Convert.ToDecimal(sgst) * totalsaleamount / 100;
+             totalsaleamount = Convert.ToDecimal(grossTotalRate * orderdata.Qty);
+             cgstamount = Convert.ToDecimal(cgst) * totalsaleamount / 100;
+             sgstamount = Convert.ToDecimal(sgst) * totalsaleamount / 100;
             // var igstamount = Convert.ToDecimal(igst) * totalsaleamount / 100;
-            var totalnetwt = productdata.NetWt * orderdata.Qty;
-            var totalgrwt = productdata.grosswt * orderdata.Qty;
-            var totalstwt = Convert.ToDecimal(productdata.StoneWeight) * (Convert.ToDecimal(orderdata.Qty));
+             totalnetwt = productdata.NetWt * orderdata.Qty;
+             totalgrwt = productdata.grosswt * orderdata.Qty;
+             totalstwt = Convert.ToDecimal(productdata.StoneWeight) * (Convert.ToDecimal(orderdata.Qty));
 
-            var totaltax = cgstamount + sgstamount;
-            var netamount = totalsaleamount + Convert.ToDecimal(totaltax);
-
+             totaltax = cgstamount + sgstamount;
+             netamount = totalsaleamount + Convert.ToDecimal(totaltax);
+               MRP=netamount;
+            }
             var data = "";
             var imagePath = productdata.Images.Split(',');
             data = "https://jewellerywebapplications.blob.core.windows.net/images/" + imagePath[0];
@@ -411,7 +443,7 @@ namespace JewelleryWebApplication.Controllers
                 template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
                 template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
                 template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
-                template = template.Replace("XXXpriceXXX", orderdata.Price.ToString());
+                template = template.Replace("XXXpriceXXX", MRP.ToString());
                 template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
                 await _emailSender.SendEmailAsync(user.Email, "Order Confirmation", $"" + template + "");
             }
@@ -440,7 +472,7 @@ namespace JewelleryWebApplication.Controllers
                 template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
                 template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
                 template = template.Replace("XXXordervalueXXX", orderdata.ReceivedAmt.ToString());
-                template = template.Replace("XXXpriceXXX", orderdata.Price.ToString());
+                template = template.Replace("XXXpriceXXX", MRP.ToString());
                 template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
                 template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
                 template1 = template1.Replace("XXXXcuraddressXXX", user.PerAdd);
@@ -457,26 +489,26 @@ namespace JewelleryWebApplication.Controllers
                 template1 = template1.Replace("XXXXgrwtXXX", productdata.grosswt.ToString());
                 template1 = template1.Replace("XXXXstonewtXXX", productdata.StoneWeight.ToString());
                 template1 = template1.Replace("XXXXnetwtXXX", productdata.NetWt.ToString());
-                var makingchrg="";
+              
                 if (productdata.Making_Percentage != null && productdata.Making_Percentage != "0")
                 {
                     makingchrg = productdata.Making_Percentage;
-                    template1 = template1.Replace("XXXXmkpercXXX", productdata.Making_Percentage.ToString()+"%");
+                    template1 = template1.Replace("XXXXmkpercXXX", makingchrg.ToString()+"%");
                 }
                 else if (productdata.Making_per_gram != null && productdata.Making_per_gram != "0")
                 {
                     makingchrg = productdata.Making_per_gram;
-                    template1 = template1.Replace("XXXXmkpercXXX", productdata.Making_per_gram.ToString());
+                    template1 = template1.Replace("XXXXmkpercXXX", makingchrg.ToString());
                 }
                 else if (productdata.Making_Fixed_Amt != null && productdata.Making_Fixed_Amt != "0")
                 {
                     makingchrg = productdata.Making_Fixed_Amt;
-                    template1 = template1.Replace("XXXXmkpercXXX", productdata.Making_Fixed_Amt.ToString());
+                    template1 = template1.Replace("XXXXmkpercXXX", makingchrg.ToString());
                 }
                 else if (productdata.Making_Fixed_Wastage != null && productdata.Making_Fixed_Wastage != "0")
                 {
                     makingchrg = productdata.Making_Fixed_Wastage;
-                    template1 = template1.Replace("XXXXmkpercXXX", productdata.Making_Fixed_Wastage.ToString());
+                    template1 = template1.Replace("XXXXmkpercXXX", makingchrg.ToString());
                 }
                 template1 = template1.Replace("XXXXsizeXXX", productdata.Size);
                 template1 = template1.Replace("XXXXrateXXX", puritydata.TodaysRate);
