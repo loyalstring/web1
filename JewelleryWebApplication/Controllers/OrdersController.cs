@@ -5,32 +5,19 @@ using JewelleryWebApplication.Models.ViewModel;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-//using Razorpay.Api;
 using System.Data;
 using System.Net.Mail;
 using System.Net;
 using Document = iTextSharp.text.Document;
-using iTextSharp.tool.xml.pipeline.html;
-using iTextSharp.tool.xml.pipeline.css;
 using iTextSharp.tool.xml;
-using iTextSharp.tool.xml.parser;
-using iTextSharp.tool.xml.pipeline.end;
 using System.Text;
 using System.Text.Json;
 using System.Security.Cryptography;
-using System.Net.Mime;
-using MimeKit;
 using ContentDisposition = MimeKit.ContentDisposition;
-using Microsoft.Data.SqlClient;
-using DocumentFormat.OpenXml.Office2010.ExcelAc;
-using iText.Commons.Actions.Data;
-using JewelleryWebApplication.Models.APIModel;
-using System.IO;
-using JewelleryWebApplication.Migrations;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.Extensions.Azure;
-using IronPdf.Rendering;
+using iTextSharp.text;
+using iTextSharp.text.pdf;
 
 namespace JewelleryWebApplication.Controllers
 {
@@ -509,7 +496,7 @@ namespace JewelleryWebApplication.Controllers
                 template1 = template1.Replace("XXXXtotalstwtXXX", totalstwt.ToString());
                 //template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
                 byte[] pdfBytes = ConvertHtmlToPdf(template1);
-              
+               
                 var attachment = new Attachment(new MemoryStream(pdfBytes), "Invoice.pdf", "application/pdf");
                 var message = new MailMessage("info@mkgharejewellers.com", user.Email, "", "Please find the attached PDF.");
                 message.Attachments.Add(attachment);
@@ -519,15 +506,23 @@ namespace JewelleryWebApplication.Controllers
 
         public byte[] ConvertHtmlToPdf(string htmlContent)
         {
-            var renderer = new HtmlToPdf();
-            var pdf = renderer.RenderHtmlAsPdf(htmlContent);
-            var pdfDocument = new PdfDocument(htmlContent);
-            pdfDocument.RemoveSignatures();
-             return pdfDocument.Stream.ToArray();
-          //  return pdf.BinaryData;
+            using (var output = new MemoryStream())
+            {
+                using (var document = new Document())
+                {
+                    using (var writer = PdfWriter.GetInstance(document, output))
+                    {
+                        document.Open();
+                        using (var htmlStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(htmlContent)))
+                        {
+                            XMLWorkerHelper.GetInstance().ParseXHtml(writer, document, htmlStream, System.Text.Encoding.UTF8);
+                        }
+                        document.Close();
+                    }
+                }
+                return output.ToArray();
+            }
         }
-        
-     
         public void SendEmailWithAttachment(byte[] attachmentBytes, string template, int id)
         {
             var orderdata = _ordersRepository.All().Where(x => x.Id == id).FirstOrDefault();
