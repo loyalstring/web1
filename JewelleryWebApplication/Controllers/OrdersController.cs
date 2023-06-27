@@ -174,7 +174,7 @@ namespace JewelleryWebApplication.Controllers
             
              // await sendEmail1pdf(order.Id,order.Product_id, order.Customer_Id, order.OrderStatus);
             //  await  sendEmail(order.Id, order.Product_id, order.Customer_Id, order.OrderStatus);
-               await sendEmail(order.Id,order.Product_id,order.Customer_Id,order.OrderStatus);
+              // await sendEmail(order.Id,order.Product_id,order.Customer_Id,order.OrderStatus);
                 return Ok(new { Status = "Success", data = order });
             }
             return BadRequest();
