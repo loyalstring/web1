@@ -8,16 +8,16 @@ using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Net.Mail;
 using System.Net;
-using Document = iTextSharp.text.Document;
-using iTextSharp.tool.xml;
-using System.Text;
-using System.Text.Json;
 using System.Security.Cryptography;
 using ContentDisposition = MimeKit.ContentDisposition;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.Extensions.Azure;
-using iTextSharp.text;
-using iTextSharp.text.pdf;
+using Microsoft.AspNetCore.Routing.Template;
+using System.Text;
+using System.Text.Json;
+using System.Reflection.Metadata;
+using SelectPdf;
+using PdfDocument = SelectPdf.PdfDocument;
 
 namespace JewelleryWebApplication.Controllers
 {
@@ -174,7 +174,7 @@ namespace JewelleryWebApplication.Controllers
             
              // await sendEmail1pdf(order.Id,order.Product_id, order.Customer_Id, order.OrderStatus);
             //  await  sendEmail(order.Id, order.Product_id, order.Customer_Id, order.OrderStatus);
-              // await sendEmail(order.Id,order.Product_id,order.Customer_Id,order.OrderStatus);
+               await sendEmail(order.Id,order.Product_id,order.Customer_Id,order.OrderStatus);
                 return Ok(new { Status = "Success", data = order });
             }
             return BadRequest();
@@ -327,6 +327,15 @@ namespace JewelleryWebApplication.Controllers
                     await sendEmail(orderdata.Id, orderdata.Product_id, orderdata.Customer_Id, orderdata.OrderStatus);
                     return Ok(new { Status = "Success", data = orderdata });
                 }
+                else if (model.OrderStatus == "Payment Failed")
+                {
+                    orderdata.Id = model.Id;
+                    orderdata.OnlineStatus = model.OnlineStatus;
+                    orderdata.OrderStatus = "Payment Failed";
+                    await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
+                    await sendEmail(orderdata.Id, orderdata.Product_id, orderdata.Customer_Id, orderdata.OrderStatus);
+                    return Ok(new { Status = "Success", data = orderdata });
+                }
 
             }
 
@@ -335,7 +344,7 @@ namespace JewelleryWebApplication.Controllers
         }
         private async Task sendEmail(int Id, int Productid, int customerid, string Status)
         {
-            string Message = "<p>Your Order  -" + Status + "  Sucessfully</p>";
+           // string Message = "Your Order  -" + Status + "  Sucessfully";
             var orderdata = _ordersRepository.All().Where(x => x.Id == Id).FirstOrDefault();
             var user = _customerDetailsRepository.All().Where(x => x.Id == customerid).FirstOrDefault();
             var productdata = _productrepository.All().Where(x => x.Id == Productid).FirstOrDefault();
@@ -363,9 +372,9 @@ namespace JewelleryWebApplication.Controllers
                 cgstamount = (Convert.ToDecimal(cgst) * MRP) / 100;
                 sgstamount = (Convert.ToDecimal(sgst) * MRP) / 100;
                 totaltax = cgstamount + sgstamount;
-                totalsaleamount = (MRP - totaltax);
+                totalsaleamount = MRP;
                 totalnetwt = productdata.NetWt;
-               var finalPrice = MRP;
+               var finalPrice = MRP+totaltax;
                  grossTotalRate = totalsaleamount;
                 netamount = finalPrice;
                 totalgrwt = productdata.grosswt*orderdata.Qty;
@@ -416,7 +425,7 @@ namespace JewelleryWebApplication.Controllers
             {
                 var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderConfirmation.html");
                 var template = System.IO.File.ReadAllText(viewPath);
-                template = template.Replace("XXXABCXXX", Message);
+               
                 template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
                 template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
                 template = template.Replace("XXXXcuraddressXXX", user.PerAdd);
@@ -436,7 +445,7 @@ namespace JewelleryWebApplication.Controllers
                 template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
                 await _emailSender.SendEmailAsync(user.Email, "Order Confirmation", $"" + template + "");
             }
-            if (orderdata.OrderStatus == "Delivered")
+          else  if (orderdata.OrderStatus == "Delivered")
             {
                 var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderDelivered.html");
                 //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
@@ -444,7 +453,7 @@ namespace JewelleryWebApplication.Controllers
                 var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
                 var template1 = System.IO.File.ReadAllText(viewPath1);
                 //    var template1 = System.IO.File.ReadAllText(viewPath1);
-                template = template.Replace("XXXABCXXX", Message);
+              //  template = template.Replace("XXXABCXXX", Message);
                 template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
                 template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
                 template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
@@ -478,7 +487,7 @@ namespace JewelleryWebApplication.Controllers
                 template1 = template1.Replace("XXXXgrwtXXX", productdata.grosswt.ToString());
                 template1 = template1.Replace("XXXXstonewtXXX", productdata.StoneWeight.ToString());
                 template1 = template1.Replace("XXXXnetwtXXX", productdata.NetWt.ToString());
-                    template1 = template1.Replace("XXXXmkpercXXX", makingchrg.ToString());
+                template1 = template1.Replace("XXXXmkpercXXX", makingchrg.ToString());
                 template1 = template1.Replace("XXXXsizeXXX", productdata.Size);
                 template1 = template1.Replace("XXXXrateXXX", puritydata.TodaysRate);
                 template1 = template1.Replace("XXXXtotalamountXXX", totalsaleamount.ToString());
@@ -494,36 +503,50 @@ namespace JewelleryWebApplication.Controllers
                 template1 = template1.Replace("XXXXtotalnetwtXXX", totalnetwt.ToString());
                 template1 = template1.Replace("XXXXtotalgrwtXXX", totalgrwt.ToString());
                 template1 = template1.Replace("XXXXtotalstwtXXX", totalstwt.ToString());
-                //template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
-                byte[] pdfBytes = ConvertHtmlToPdf(template1);
-               
-                var attachment = new Attachment(new MemoryStream(pdfBytes), "Invoice.pdf", "application/pdf");
+                template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
+                //byte[] pdfBytes = ConvertHtmlToPdf(template1);
+                
+                HtmlToPdf htmlToPdf = new HtmlToPdf();
+                PdfDocument pdfDocument = htmlToPdf.ConvertHtmlString(template1);
+                byte[] pdf = pdfDocument.Save();
+                pdfDocument.Close();
+
+                var attachment = new Attachment(new MemoryStream(pdf), "Invoice.pdf", "application/pdf");
                 var message = new MailMessage("info@mkgharejewellers.com", user.Email, "", "Please find the attached PDF.");
                 message.Attachments.Add(attachment);
-                SendEmailWithAttachment(pdfBytes, template, orderdata.Id);
+                SendEmailWithAttachment(pdf, template, orderdata.Id);
             }
-        }
-
-        public byte[] ConvertHtmlToPdf(string htmlContent)
-        {
-            using (var output = new MemoryStream())
+           else if (orderdata.OrderStatus == "Payment Failed")
             {
-                using (var document = new Document())
-                {
-                    using (var writer = PdfWriter.GetInstance(document, output))
-                    {
-                        document.Open();
-                        using (var htmlStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(htmlContent)))
-                        {
-                            XMLWorkerHelper.GetInstance().ParseXHtml(writer, document, htmlStream, System.Text.Encoding.UTF8);
-                        }
-                        document.Close();
-                    }
-                }
-                return output.ToArray();
+                var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "PaymentFailed.html");
+                //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+                var template = System.IO.File.ReadAllText(viewPath);
+              
+                //    var template1 = System.IO.File.ReadAllText(viewPath1);
+                //  template = template.Replace("XXXABCXXX", Message);
+               
+                template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
+                template = template.Replace("XXXXemailXXX", user.Email);
+                template = template.Replace("XXXXpincodeXXX", user.PinCode);
+                template = template.Replace("XXXXquantityXXX", productdata.Quantity.ToString());
+                template = template.Replace("XXXXsizeXXX", productdata.Size);
+                template = template.Replace("XXXXimagesXXX", data);
+                template = template.Replace("XXXXorderXXX", orderdata.Id.ToString());
+                template = template.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
+                template = template.Replace("XXXXmobileXXX", user.Mobile);
+                template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
+                template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
+                template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
+                template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
+                template = template.Replace("XXXordervalueXXX", orderdata.ReceivedAmt.ToString());
+                template = template.Replace("XXXpriceXXX", MRP.ToString());
+                await _emailSender.SendEmailAsync(user.Email, "Payment Failure - Order #"+orderdata.Id+"", $"" + template + "");
             }
         }
-        public void SendEmailWithAttachment(byte[] attachmentBytes, string template, int id)
+      
+     
+            public void SendEmailWithAttachment(byte[] attachmentBytes, string template, int id)
         {
             var orderdata = _ordersRepository.All().Where(x => x.Id == id).FirstOrDefault();
             var user = _customerDetailsRepository.All().Where(x => x.Id == orderdata.Customer_Id).FirstOrDefault();
@@ -543,8 +566,7 @@ namespace JewelleryWebApplication.Controllers
                 client.Send(message);
             }
         }
-
-
+      
         [HttpPost("UpdateRates")]
         public async Task<IActionResult> UpdateRates(tblRates model)
         {
