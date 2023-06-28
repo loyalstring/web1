@@ -1,4 +1,4 @@
-﻿namespace JewelleryWebApp.Models
+﻿namespace JewelleryWebApplication.Models
 {
     public class EmailSettings
     {

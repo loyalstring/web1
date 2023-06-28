@@ -3,9 +3,6 @@ using JewelleryWebApplication.Data;
 using JewelleryWebApplication.Base.Interface;
 using JewelleryWebApplication.Base.Model;
 using System.Linq.Expressions;
-using DocumentFormat.OpenXml.InkML;
-using DocumentFormat.OpenXml.Office2010.Excel;
-using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
 
 namespace JewelleryWebApplication.Base.Repository
 {

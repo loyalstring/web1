@@ -1,9 +1,7 @@
 using Abp.Net.Mail;
-using JewelleryWebApp.Models;
 using JewelleryWebApplication.Data;
 using JewelleryWebApplication.Services;
 using Microsoft.EntityFrameworkCore;
-using Razorpay.Api;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Azure;
 using JewelleryWebApplication.Options;
@@ -40,14 +38,14 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => options.S
 builder.Services.AddScoped<IRazorViewToStringRenderer, RazorViewToStringRenderer>();
 builder.Services.AddControllers();
 builder.Services.AddRazorPages();
-builder.Services.Configure<RazorpayClient>(builder.Configuration.GetSection("PaymentSettings"));
+//builder.Services.Configure<RazorpayClient>(builder.Configuration.GetSection("PaymentSettings"));
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddSingleton<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, EmailSender>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-
+    
 var service = builder.Services;
 service.Configure<AzureOptions>(builder.Configuration.GetSection("Azure"));
 

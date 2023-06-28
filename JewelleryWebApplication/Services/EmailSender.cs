@@ -1,5 +1,5 @@
 ﻿
-using JewelleryWebApp.Models;
+using JewelleryWebApplication.Models;
 using Microsoft.Extensions.Options;
 using System.Net.Mail;
 using System.Net;

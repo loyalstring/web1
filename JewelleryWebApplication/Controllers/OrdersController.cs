@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Net.Mail;
 using System.Net;
+using MailKit;
 using System.Security.Cryptography;
 using ContentDisposition = MimeKit.ContentDisposition;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
@@ -17,7 +18,9 @@ using System.Text;
 using System.Text.Json;
 using System.Reflection.Metadata;
 using SelectPdf;
-using PdfDocument = SelectPdf.PdfDocument;
+using Azure.Core;
+using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.Extensions.Options;
 
 namespace JewelleryWebApplication.Controllers
 {
@@ -36,7 +39,8 @@ namespace JewelleryWebApplication.Controllers
         private readonly IStaffRepository _staffRepository;
         private readonly IProductRepository _productrepository;
         private readonly IEmailSender _emailSender;
-        public OrdersController(IWebHostEnvironment webHostEnvironment, IEmailSender emailSender, IConfiguration configuration, IOrdersRepository ordersRepository, ICustomerDetailsRepository customerDetailsRepository, IRateRepository rateRepository, IPurityRepository purityRepository, IProductRepository productRepository, IMaterialCategoryRepository materialCategoryRepository, IProductTypeRepository productTypeRepository, IStaffRepository staffRepository)
+        private readonly EmailSettings _emailSettings;
+        public OrdersController(IWebHostEnvironment webHostEnvironment, IConfiguration configuration, IOrdersRepository ordersRepository, ICustomerDetailsRepository customerDetailsRepository, IRateRepository rateRepository, IPurityRepository purityRepository, IProductRepository productRepository, IMaterialCategoryRepository materialCategoryRepository, IProductTypeRepository productTypeRepository, IStaffRepository staffRepository, IEmailSender emailSender, IOptions<EmailSettings> emailSettings)
         {
             //    _unitOfWork = unitOfWork;
             _environment = webHostEnvironment;
@@ -50,12 +54,13 @@ namespace JewelleryWebApplication.Controllers
             _staffRepository = staffRepository;
             _productrepository = productRepository;
             _emailSender = emailSender;
+            _emailSettings = emailSettings.Value;
         }
 
         [HttpGet("fetchAllOrders")]
         public async Task<IActionResult> fetchAllOrders()
         {
-            var ordersdata = _ordersRepository.All().Include(x=>x.tblProduct).Include(x=>x.tblCustomerDetails).ToList();
+            var ordersdata = _ordersRepository.All().Include(x => x.tblProduct).Include(x => x.tblCustomerDetails).ToList();
             if (ordersdata != null)
             {
                 return Ok(new { status = "Success", data = ordersdata });
@@ -91,7 +96,7 @@ namespace JewelleryWebApplication.Controllers
         public async Task<IActionResult> ratestodayallcategories()
         {
 
-            var ratesdata = _rateRepository.All().Include(x=>x.tblMaterialCategory).ToList().OrderByDescending(x => x.LastUpdated).Distinct();
+            var ratesdata = _rateRepository.All().Include(x => x.tblMaterialCategory).ToList().OrderByDescending(x => x.LastUpdated).Distinct();
             if (ratesdata != null)
             {
                 return Ok(new { status = "success", data = ratesdata });
@@ -110,7 +115,7 @@ namespace JewelleryWebApplication.Controllers
 
         }
 
-     
+
         [HttpPost("ratestodaybycategory")]
 
         public async Task<IActionResult> ratestodayabycategoriesId(tblMaterialCategory model)
@@ -145,7 +150,7 @@ namespace JewelleryWebApplication.Controllers
         [HttpPost("AllOrdersByCustomerId")]
         public async Task<IActionResult> AllOrdersByCustomerId(tblOrder model)
         {
-            var Ordersdata = _ordersRepository.All().Include(x=>x.tblProduct).Include(x=>x.tblCustomerDetails).Where(x => x.Customer_Id == model.Customer_Id).ToList();
+            var Ordersdata = _ordersRepository.All().Include(x => x.tblProduct).Include(x => x.tblCustomerDetails).Where(x => x.Customer_Id == model.Customer_Id).ToList();
             if (Ordersdata != null)
             {
                 return Ok(new { status = "Success", data = Ordersdata });
@@ -170,19 +175,19 @@ namespace JewelleryWebApplication.Controllers
                 order.ReceivedAmt = model.ReceivedAmt;
                 order.OnlineStatus = "Active";
                 order.OrderStatus = model.OrderStatus;
-                   await  _ordersRepository.InsertAsync(order);
-            
-             // await sendEmail1pdf(order.Id,order.Product_id, order.Customer_Id, order.OrderStatus);
-            //  await  sendEmail(order.Id, order.Product_id, order.Customer_Id, order.OrderStatus);
-              // await sendEmail(order.Id,order.Product_id,order.Customer_Id,order.OrderStatus);
+                await _ordersRepository.InsertAsync(order);
+
+                // await sendEmail1pdf(order.Id,order.Product_id, order.Customer_Id, order.OrderStatus);
+                //  await  sendEmail(order.Id, order.Product_id, order.Customer_Id, order.OrderStatus);
+                // await sendEmail(order.Id,order.Product_id,order.Customer_Id,order.OrderStatus);
                 return Ok(new { Status = "Success", data = order });
             }
             return BadRequest();
         }
-      
+
         //private async Task sendEmail1pdf(int Id, int Productid, int customerid, string Status)
         //{
-          
+
         //    string Message = "<p>Your Order  -" + Status + " Completed Sucessfully</p>";
         //    var orderdata = _ordersRepository.All().Where(x => x.Id == Id).FirstOrDefault();
         //    var user = _customerDetailsRepository.All().Where(x => x.Id == customerid).FirstOrDefault();
@@ -220,7 +225,7 @@ namespace JewelleryWebApplication.Controllers
         //        var template1 = System.IO.File.ReadAllText(viewPath1);
         //        //    var template1 = System.IO.File.ReadAllText(viewPath1);
         //        template = template.Replace("XXXABCXXX", Message);
-             
+
         //        template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
         //        template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
         //        template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
@@ -265,7 +270,7 @@ namespace JewelleryWebApplication.Controllers
         //        await _emailSender.SendEmailAsync(user.Email, "YOUR ORDER IS ON THE WAY!", $"" + template + "");
         //    }
         //}
-    
+
         //public void SendEmailWithAttachment(byte[] attachmentBytes)
         //{
         //    using (var client = new SmtpClient("smtp.example.com", 587))
@@ -296,7 +301,7 @@ namespace JewelleryWebApplication.Controllers
                 rate.Purity = model.Purity;
                 rate.todaysrate = model.todaysrate;
                 rate.Staff_id = staff;
-                rate.OnlineStatus="Active";
+                rate.OnlineStatus = "Active";
                 await _rateRepository.InsertAsync(rate);
 
                 return Ok(new { Status = "Success", data = rate });
@@ -312,19 +317,19 @@ namespace JewelleryWebApplication.Controllers
                 if (model.OrderStatus == "Paid")
                 {
                     orderdata.Id = model.Id;
-               
+
                     orderdata.OrderStatus = "Paid";
                     await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
-                    await sendEmail(orderdata.Id, orderdata.Product_id, orderdata.Customer_Id, orderdata.OrderStatus);
+                    await sendEmail(orderdata.Id, orderdata.Product_id, orderdata.Customer_Id);
                     return Ok(new { Status = "Success", data = orderdata });
                 }
-              else  if (model.OrderStatus == "Delivered")
+                else if (model.OrderStatus == "Delivered")
                 {
                     orderdata.Id = model.Id;
                     orderdata.OnlineStatus = model.OnlineStatus;
                     orderdata.OrderStatus = "Delivered";
                     await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
-                    await sendEmail(orderdata.Id, orderdata.Product_id, orderdata.Customer_Id, orderdata.OrderStatus);
+                    await sendEmail(orderdata.Id, orderdata.Product_id, orderdata.Customer_Id);
                     return Ok(new { Status = "Success", data = orderdata });
                 }
                 else if (model.OrderStatus == "Payment Failed")
@@ -333,7 +338,7 @@ namespace JewelleryWebApplication.Controllers
                     orderdata.OnlineStatus = model.OnlineStatus;
                     orderdata.OrderStatus = "Payment Failed";
                     await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
-                    await sendEmail(orderdata.Id, orderdata.Product_id, orderdata.Customer_Id, orderdata.OrderStatus);
+                    await sendEmail(orderdata.Id, orderdata.Product_id, orderdata.Customer_Id);
                     return Ok(new { Status = "Success", data = orderdata });
                 }
 
@@ -342,9 +347,9 @@ namespace JewelleryWebApplication.Controllers
 
             return BadRequest();
         }
-        private async Task sendEmail(int Id, int Productid, int customerid, string Status)
+        private async Task sendEmail(int Id, int Productid, int customerid)
         {
-           // string Message = "Your Order  -" + Status + "  Sucessfully";
+            //string Message = "Your Order  -" + Status + "  Sucessfully";
             var orderdata = _ordersRepository.All().Where(x => x.Id == Id).FirstOrDefault();
             var user = _customerDetailsRepository.All().Where(x => x.Id == customerid).FirstOrDefault();
             var productdata = _productrepository.All().Where(x => x.Id == Productid).FirstOrDefault();
@@ -367,55 +372,55 @@ namespace JewelleryWebApplication.Controllers
             {
                 var cgst = 1.5;
                 var sgst = 1.5;
-              
+
                 MRP = Convert.ToDecimal(productdata.MRP) * Convert.ToDecimal(orderdata.Qty);
                 cgstamount = (Convert.ToDecimal(cgst) * MRP) / 100;
                 sgstamount = (Convert.ToDecimal(sgst) * MRP) / 100;
                 totaltax = cgstamount + sgstamount;
                 totalsaleamount = MRP;
                 totalnetwt = productdata.NetWt;
-               var finalPrice = MRP+totaltax;
-                 grossTotalRate = totalsaleamount;
+                var finalPrice = MRP + totaltax;
+                grossTotalRate = totalsaleamount;
                 netamount = finalPrice;
-                totalgrwt = productdata.grosswt*orderdata.Qty;
-                totalstwt = Convert.ToDecimal(productdata.StoneWeight)*orderdata.Qty;
+                totalgrwt = productdata.grosswt * orderdata.Qty;
+                totalstwt = Convert.ToDecimal(productdata.StoneWeight) * orderdata.Qty;
                 Making_Percentage = 0;
-                Making_per_gram=0;
+                Making_per_gram = 0;
                 Making_Fixed_Amt = 0;
-                 makingchrg = 0;
+                makingchrg = 0;
             }
             else
             {
-            var netGoldRate= (Convert.ToDecimal(productdata.NetWt) * Convert.ToDecimal(puritydata.TodaysRate)) / 10;
-            var makingCharges1 = Convert.ToDecimal(productdata.NetWt) * Convert.ToDecimal(productdata.Making_per_gram);
-            var makingCharges2 = (netGoldRate * Convert.ToDecimal(productdata.Making_Percentage)) / 100;
-            var makingCharges3 = Convert.ToDecimal(productdata.Making_Fixed_Amt);
-            var makingCharges4= (Convert.ToDecimal(puritydata.TodaysRate) * Convert.ToDecimal(productdata.Making_Fixed_Wastage)) / 10;
+                var netGoldRate = (Convert.ToDecimal(productdata.NetWt) * Convert.ToDecimal(puritydata.TodaysRate)) / 10;
+                var makingCharges1 = Convert.ToDecimal(productdata.NetWt) * Convert.ToDecimal(productdata.Making_per_gram);
+                var makingCharges2 = (netGoldRate * Convert.ToDecimal(productdata.Making_Percentage)) / 100;
+                var makingCharges3 = Convert.ToDecimal(productdata.Making_Fixed_Amt);
+                var makingCharges4 = (Convert.ToDecimal(puritydata.TodaysRate) * Convert.ToDecimal(productdata.Making_Fixed_Wastage)) / 10;
                 makingchrg = makingCharges1 + makingCharges2 + makingCharges3 + makingCharges4;
-            var GST = 0.03;
-            grossTotalRate= 1;
-            
-               grossTotalRate= netGoldRate + makingCharges1 + makingCharges2 + makingCharges3 + makingCharges4 + Convert.ToDecimal(productdata.StoneAmount);
-            var GSTAdded= Convert.ToDecimal(GST)* grossTotalRate;
-            var finalPrice = grossTotalRate + GSTAdded;
-        
-            //var productprice = (Convert.ToInt32(puritydata.TodaysRate) / 10) * productdata.NetWt;
-            //var makingperc = productprice * Convert.ToInt32(productdata.Making_Percentage) / 100;
-            //var total = productprice + makingperc;
-            var cgst = 1.5;
-            var sgst = 1.5;
-            // var igst = 3;
-             totalsaleamount = Convert.ToDecimal(grossTotalRate * orderdata.Qty);
-             cgstamount = Convert.ToDecimal(cgst) * totalsaleamount / 100;
-             sgstamount = Convert.ToDecimal(sgst) * totalsaleamount / 100;
-            // var igstamount = Convert.ToDecimal(igst) * totalsaleamount / 100;
-             totalnetwt = productdata.NetWt * orderdata.Qty;
-             totalgrwt = productdata.grosswt * orderdata.Qty;
-             totalstwt = Convert.ToDecimal(productdata.StoneWeight) * (Convert.ToDecimal(orderdata.Qty));
+                var GST = 0.03;
+                grossTotalRate = 1;
 
-             totaltax = cgstamount + sgstamount;
-             netamount = totalsaleamount + Convert.ToDecimal(totaltax);
-               MRP=netamount;
+                grossTotalRate = netGoldRate + makingCharges1 + makingCharges2 + makingCharges3 + makingCharges4 + Convert.ToDecimal(productdata.StoneAmount);
+                var GSTAdded = Convert.ToDecimal(GST) * grossTotalRate;
+                var finalPrice = grossTotalRate + GSTAdded;
+
+                //var productprice = (Convert.ToInt32(puritydata.TodaysRate) / 10) * productdata.NetWt;
+                //var makingperc = productprice * Convert.ToInt32(productdata.Making_Percentage) / 100;
+                //var total = productprice + makingperc;
+                var cgst = 1.5;
+                var sgst = 1.5;
+                // var igst = 3;
+                totalsaleamount = Convert.ToDecimal(grossTotalRate * orderdata.Qty);
+                cgstamount = Convert.ToDecimal(cgst) * totalsaleamount / 100;
+                sgstamount = Convert.ToDecimal(sgst) * totalsaleamount / 100;
+                // var igstamount = Convert.ToDecimal(igst) * totalsaleamount / 100;
+                totalnetwt = productdata.NetWt * orderdata.Qty;
+                totalgrwt = productdata.grosswt * orderdata.Qty;
+                totalstwt = Convert.ToDecimal(productdata.StoneWeight) * (Convert.ToDecimal(orderdata.Qty));
+
+                totaltax = cgstamount + sgstamount;
+                netamount = totalsaleamount + Convert.ToDecimal(totaltax);
+                MRP = netamount;
             }
             var data = "";
             var imagePath = productdata.Images.Split(',');
@@ -425,7 +430,7 @@ namespace JewelleryWebApplication.Controllers
             {
                 var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderConfirmation.html");
                 var template = System.IO.File.ReadAllText(viewPath);
-               
+
                 template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
                 template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
                 template = template.Replace("XXXXcuraddressXXX", user.PerAdd);
@@ -445,7 +450,7 @@ namespace JewelleryWebApplication.Controllers
                 template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
                 await _emailSender.SendEmailAsync(user.Email, "Order Confirmation", $"" + template + "");
             }
-          else  if (orderdata.OrderStatus == "Delivered")
+            else if (orderdata.OrderStatus == "Delivered")
             {
                 var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderDelivered.html");
                 //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
@@ -453,7 +458,7 @@ namespace JewelleryWebApplication.Controllers
                 var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
                 var template1 = System.IO.File.ReadAllText(viewPath1);
                 //    var template1 = System.IO.File.ReadAllText(viewPath1);
-              //  template = template.Replace("XXXABCXXX", Message);
+                //  template = template.Replace("XXXABCXXX", Message);
                 template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
                 template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
                 template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
@@ -503,28 +508,76 @@ namespace JewelleryWebApplication.Controllers
                 template1 = template1.Replace("XXXXtotalnetwtXXX", totalnetwt.ToString());
                 template1 = template1.Replace("XXXXtotalgrwtXXX", totalgrwt.ToString());
                 template1 = template1.Replace("XXXXtotalstwtXXX", totalstwt.ToString());
-                template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
+                //template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
                 //byte[] pdfBytes = ConvertHtmlToPdf(template1);
-                
+
+
+
+
                 HtmlToPdf htmlToPdf = new HtmlToPdf();
                 PdfDocument pdfDocument = htmlToPdf.ConvertHtmlString(template1);
                 byte[] pdf = pdfDocument.Save();
                 pdfDocument.Close();
-
+                var subject = "order delivered";
+                var client = new SmtpClient(_emailSettings.MailServer)
+                {
+                    UseDefaultCredentials = false,
+                    Credentials = new NetworkCredential(_emailSettings.Sender, _emailSettings.Password),
+                    Port = _emailSettings.MailPort,
+                    EnableSsl = _emailSettings.SSL
+                };
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress("info@mkgharejewellers.com")
+                };
                 var attachment = new Attachment(new MemoryStream(pdf), "Invoice.pdf", "application/pdf");
-                var message = new MailMessage("info@mkgharejewellers.com", user.Email, "", "Please find the attached PDF.");
-                message.Attachments.Add(attachment);
-                SendEmailWithAttachment(pdf, template, orderdata.Id);
+                mailMessage.Attachments.Add(attachment);
+                mailMessage.To.Add(user.Email);
+                mailMessage.Subject = subject;
+                mailMessage.Body = template;
+                mailMessage.IsBodyHtml = true;
+
+                try
+                {
+                    await client.SendMailAsync(mailMessage);
+                    // Email sent successfully
+                }
+                catch (Exception ex)
+                {
+                    // Handle the exception (log it or display an error message)
+                    Console.WriteLine("Failed to send email: " + ex.Message);
+                }
+
+                //await _emailSender.SendEmailAsync(user.Email, "order delivered", $"" + template + "",pdf);
+
+
+                //  var message = new MailMessage("info@mkgharejewellers.com", user.Email, "", "Please find the attached PDF.");
+                //  message.Attachments.Add(attachment);
+                //  SendEmailWithAttachment(pdf, template, orderdata.Id);
+
+                //using (var client = new SmtpClient("smtp.hostinger.com", 587))
+                //{
+                //    client.EnableSsl = true;
+                //    client.UseDefaultCredentials = false;
+                //    client.Credentials = new NetworkCredential("info@mkgharejewellers.com", "Mkghare@123");
+                //    var message = new MailMessage("info@mkgharejewellers.com", user.Email, "order delivered", template);
+                //    var attachment = new Attachment(new MemoryStream(pdf), "Invoice.pdf", "application/pdf");
+                //    message.Attachments.Add(attachment);
+                //    message.IsBodyHtml = true;
+                //    message.BodyEncoding = Encoding.UTF8;
+                //    client.Send(message);
+                //}
+
             }
-           else if (orderdata.OrderStatus == "Payment Failed")
+            else if (orderdata.OrderStatus == "Payment Failed")
             {
                 var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "PaymentFailed.html");
                 //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
                 var template = System.IO.File.ReadAllText(viewPath);
-              
+
                 //    var template1 = System.IO.File.ReadAllText(viewPath1);
                 //  template = template.Replace("XXXABCXXX", Message);
-               
+
                 template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
                 template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
                 template = template.Replace("XXXXemailXXX", user.Email);
@@ -541,32 +594,31 @@ namespace JewelleryWebApplication.Controllers
                 template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
                 template = template.Replace("XXXordervalueXXX", orderdata.ReceivedAmt.ToString());
                 template = template.Replace("XXXpriceXXX", MRP.ToString());
-                await _emailSender.SendEmailAsync(user.Email, "Payment Failure - Order #"+orderdata.Id+"", $"" + template + "");
+                await _emailSender.SendEmailAsync(user.Email, "Payment Failure - Order #" + orderdata.Id + "", $"" + template + "");
             }
         }
-      
-     
-            public void SendEmailWithAttachment(byte[] attachmentBytes, string template, int id)
-        {
-            var orderdata = _ordersRepository.All().Where(x => x.Id == id).FirstOrDefault();
-            var user = _customerDetailsRepository.All().Where(x => x.Id == orderdata.Customer_Id).FirstOrDefault();
-            using (var client = new SmtpClient("smtp.hostinger.com", 587))
-            {
-                client.EnableSsl = true;
-                client.UseDefaultCredentials = false;
-                client.Credentials = new NetworkCredential("info@mkgharejewellers.com", "Mkghare@123");
 
-                var message = new MailMessage("info@mkgharejewellers.com", user.Email, "order delivered", template + "please check attached pdf ");
 
-                var attachment = new Attachment(new MemoryStream(attachmentBytes), "Invoice.pdf", "application/pdf");
-                message.Attachments.Add(attachment);
-                message.IsBodyHtml = true;
-                message.BodyEncoding = Encoding.UTF8;
+        //    public void SendEmailWithAttachment(byte[] attachmentBytes, string template, int id)
+        //{
+        //    var orderdata = _ordersRepository.All().Where(x => x.Id == id).FirstOrDefault();
+        //    var user = _customerDetailsRepository.All().Where(x => x.Id == orderdata.Customer_Id).FirstOrDefault();
+        //    using (var client = new SmtpClient("smtp.hostinger.com", 587))
+        //    {
+        //        client.EnableSsl = true;
+        //        client.UseDefaultCredentials = false;
+        //        client.Credentials = new NetworkCredential("info@mkgharejewellers.com", "Mkghare@123");
+        //        var message = new MailMessage("info@mkgharejewellers.com", user.Email, "order delivered", template + "please check attached pdf ");
 
-                client.Send(message);
-            }
-        }
-      
+        //        var attachment = new Attachment(new MemoryStream(attachmentBytes), "Invoice.pdf", "application/pdf");
+        //        message.Attachments.Add(attachment);
+        //        message.IsBodyHtml = true;
+        //        message.BodyEncoding = Encoding.UTF8;
+
+        //        client.Send(message);
+        //    }
+        //}
+
         [HttpPost("UpdateRates")]
         public async Task<IActionResult> UpdateRates(tblRates model)
         {
@@ -608,33 +660,33 @@ namespace JewelleryWebApplication.Controllers
             return BadRequest();
         }
 
-      
+
 
         [HttpPost("PaymentRequest")]
         public async Task<IActionResult> PaymentRequest(PaymentViewModel model)
-        { 
-         
+        {
+
 
             var total = model.amount * 100;
             string uniqueId = Guid.NewGuid().ToString();
             int orderId = model.orderId;
-            int customerId= Convert.ToInt32(model.id);
+            int customerId = Convert.ToInt32(model.id);
             var payload = new
             {
                 merchantId = "GHAREONLINE",
                 merchantTransactionId = uniqueId /*"MT7850590068188112"*/,
                 merchantUserId = "MUID123",
                 amount = total,
-               
-             callbackUrl = $"https://www.mkgharejewellers.com",
-            redirectUrl = $"https://www.mkgharejewellers.com/paymentsuccesspage?orderId={orderId}&custId={customerId}",
-            mobileNumber = model.mobile,
+
+                callbackUrl = $"https://www.mkgharejewellers.com",
+                redirectUrl = $"https://www.mkgharejewellers.com/paymentsuccesspage?orderId={orderId}&custId={customerId}",
+                mobileNumber = model.mobile,
                 paymentInstrument = new
                 {
                     type = "PAY_PAGE"
                 }
             };
-        
+
             var saltKey = "cdca9558-eb96-46c7-bed3-f96abfdd044d";
             var saltIndex = 1;
             var base64Payload = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload)));
@@ -647,8 +699,8 @@ namespace JewelleryWebApplication.Controllers
             var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
             using (var client = new HttpClient())
             {
-                
-               // client.DefaultRequestHeaders.Add("Content-Type", "application/json");
+
+                // client.DefaultRequestHeaders.Add("Content-Type", "application/json");
                 client.DefaultRequestHeaders.Add("X-VERIFY", xVerify);
                 var response = await client.PostAsync("https://api.phonepe.com/apis/hermes/pg/v1/pay", content);
                 var jsonResponse = await response.Content.ReadAsStringAsync();
@@ -657,7 +709,7 @@ namespace JewelleryWebApplication.Controllers
 
                 if (response.IsSuccessStatusCode)
                 {
-                 
+
 
                     // Handle the successful response from PhonePe API
                     return Ok(jsonResponse);
@@ -670,7 +722,7 @@ namespace JewelleryWebApplication.Controllers
             }
         }
 
-      
+
         [HttpGet("PaymentStatus")]
         public async Task<IActionResult> PaymentStatus(PaymentStatusViewModel model)
         {

@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System.Diagnostics.Eventing.Reader;
-using iText.Commons.Actions.Data;
 using Azure.Storage.Blobs;
 using JewelleryWebApplication.Options;
 using Microsoft.Extensions.Options;
@@ -66,6 +65,17 @@ namespace JewelleryWebApplication.Controllers
             }
             return Ok(new { data = "No Data" });
         }
+        [HttpGet("GetuniqiueAllProduct")]
+        public async Task<IActionResult> GetuniqiueAllProduct()
+        {
+            var Productdata = _productrepository.All().Include(x => x.tblMaterialCategory).Include(x => x.Party_Details).Include(x => x.tblBox).Include(x => x.tblPurity).Where(x=>x.OnlineStatus=="Active").AsEnumerable().DistinctBy(x=>x.Product_Name).ToList();
+            if (Productdata != null)
+            {
+                return Ok(new { data = Productdata });
+            }
+            return Ok(new { data = "No Data" });
+        }
+
         [HttpPost("fetchProductById")]
         public async Task<IActionResult> fetchProductById(tblProduct model)
         {
