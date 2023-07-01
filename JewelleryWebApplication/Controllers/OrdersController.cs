@@ -12,15 +12,13 @@ using MailKit;
 using System.Security.Cryptography;
 using ContentDisposition = MimeKit.ContentDisposition;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
-using Microsoft.Extensions.Azure;
-using Microsoft.AspNetCore.Routing.Template;
 using System.Text;
 using System.Text.Json;
-using System.Reflection.Metadata;
-using SelectPdf;
-using Azure.Core;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Extensions.Options;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Blobs;
+using Azure;
+using iText.Html2pdf;
 
 namespace JewelleryWebApplication.Controllers
 {
@@ -40,7 +38,9 @@ namespace JewelleryWebApplication.Controllers
         private readonly IProductRepository _productrepository;
         private readonly IEmailSender _emailSender;
         private readonly EmailSettings _emailSettings;
-        public OrdersController(IWebHostEnvironment webHostEnvironment, IConfiguration configuration, IOrdersRepository ordersRepository, ICustomerDetailsRepository customerDetailsRepository, IRateRepository rateRepository, IPurityRepository purityRepository, IProductRepository productRepository, IMaterialCategoryRepository materialCategoryRepository, IProductTypeRepository productTypeRepository, IStaffRepository staffRepository, IEmailSender emailSender, IOptions<EmailSettings> emailSettings)
+
+     
+        public OrdersController( IWebHostEnvironment webHostEnvironment, IConfiguration configuration, IOrdersRepository ordersRepository, ICustomerDetailsRepository customerDetailsRepository, IRateRepository rateRepository, IPurityRepository purityRepository, IProductRepository productRepository, IMaterialCategoryRepository materialCategoryRepository, IProductTypeRepository productTypeRepository, IStaffRepository staffRepository, IEmailSender emailSender, IOptions<EmailSettings> emailSettings)
         {
             //    _unitOfWork = unitOfWork;
             _environment = webHostEnvironment;
@@ -55,7 +55,9 @@ namespace JewelleryWebApplication.Controllers
             _productrepository = productRepository;
             _emailSender = emailSender;
             _emailSettings = emailSettings.Value;
+          
         }
+
 
         [HttpGet("fetchAllOrders")]
         public async Task<IActionResult> fetchAllOrders()
@@ -303,7 +305,6 @@ namespace JewelleryWebApplication.Controllers
                 rate.Staff_id = staff;
                 rate.OnlineStatus = "Active";
                 await _rateRepository.InsertAsync(rate);
-
                 return Ok(new { Status = "Success", data = rate });
             }
             return BadRequest();
@@ -329,7 +330,8 @@ namespace JewelleryWebApplication.Controllers
                     orderdata.OnlineStatus = model.OnlineStatus;
                     orderdata.OrderStatus = "Delivered";
                     await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
-                    await sendEmail(orderdata.Id, orderdata.Product_id, orderdata.Customer_Id);
+
+                     await sendEmail(orderdata.Id, orderdata.Product_id, orderdata.Customer_Id);
                     return Ok(new { Status = "Success", data = orderdata });
                 }
                 else if (model.OrderStatus == "Payment Failed")
@@ -452,11 +454,23 @@ namespace JewelleryWebApplication.Controllers
             }
             else if (orderdata.OrderStatus == "Delivered")
             {
+                string connectionString = "DefaultEndpointsProtocol=https;AccountName=jewellerywebapplications;AccountKey=ZaTHTvbGMADLIQLKM4ujTLLDwoCMDRGIIfeVBdjPN+taeuEmhqXV51R1IoCdFgOwdMRQRaZ7Axgr+AStBPFF2g==;EndpointSuffix=core.windows.net";
+                string containerName = "template";
+                string blobName = "Invoice.html";
+
+
+                BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
+                BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+                BlobClient blobClient = containerClient.GetBlobClient(blobName);
+
+                Response<BlobDownloadInfo> downloadResponse = await blobClient.DownloadAsync();
+                var template1 = await new StreamReader(downloadResponse.Value.Content).ReadToEndAsync();
                 var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderDelivered.html");
-                //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+              //  var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
                 var template = System.IO.File.ReadAllText(viewPath);
-                var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
-                var template1 = System.IO.File.ReadAllText(viewPath1);
+                   //var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+                //  var viewPath1 = "https://jewellerywebapplications.blob.core.windows.net/template/Invoice.html";
+            //   var template1 = System.IO.File.ReadAllText(viewPath1);
                 //    var template1 = System.IO.File.ReadAllText(viewPath1);
                 //  template = template.Replace("XXXABCXXX", Message);
                 template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
@@ -509,64 +523,51 @@ namespace JewelleryWebApplication.Controllers
                 template1 = template1.Replace("XXXXtotalgrwtXXX", totalgrwt.ToString());
                 template1 = template1.Replace("XXXXtotalstwtXXX", totalstwt.ToString());
                 //template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
-                //byte[] pdfBytes = ConvertHtmlToPdf(template1);
+                //try
+                //{
+                    byte[] pdfBytes;
+                    var htmlContent = template1;
+                    using (MemoryStream stream = new MemoryStream())
+                    {
+                        if (string.IsNullOrEmpty(htmlContent))
+                        {
+                            throw new Exception("HTML content is null or empty.");
+                        }
 
+                        ConverterProperties converterProperties = new ConverterProperties();
+                        HtmlConverter.ConvertToPdf(htmlContent, stream, converterProperties);
 
+                        pdfBytes = stream.ToArray();
+                    }
+                    var subject = "order delivered";
+                    var client = new SmtpClient(_emailSettings.MailServer)
+                    {
+                        UseDefaultCredentials = false,
+                        Credentials = new NetworkCredential(_emailSettings.Sender, _emailSettings.Password),
+                        Port = _emailSettings.MailPort,
+                        EnableSsl = _emailSettings.SSL
+                    };
+                    var mailMessage = new MailMessage
+                    {
+                        From = new MailAddress("info@mkgharejewellers.com")
+                    };
+                    var attachment = new Attachment(new MemoryStream(pdfBytes), "Invoice.pdf", "application/pdf");
+                    mailMessage.Attachments.Add(attachment);
+                    mailMessage.To.Add(user.Email);
+                    mailMessage.Subject = subject;
+                    mailMessage.Body = template;
+                    mailMessage.IsBodyHtml = true;
 
-
-                HtmlToPdf htmlToPdf = new HtmlToPdf();
-                PdfDocument pdfDocument = htmlToPdf.ConvertHtmlString(template1);
-                byte[] pdf = pdfDocument.Save();
-                pdfDocument.Close();
-                var subject = "order delivered";
-                var client = new SmtpClient(_emailSettings.MailServer)
-                {
-                    UseDefaultCredentials = false,
-                    Credentials = new NetworkCredential(_emailSettings.Sender, _emailSettings.Password),
-                    Port = _emailSettings.MailPort,
-                    EnableSsl = _emailSettings.SSL
-                };
-                var mailMessage = new MailMessage
-                {
-                    From = new MailAddress("info@mkgharejewellers.com")
-                };
-                var attachment = new Attachment(new MemoryStream(pdf), "Invoice.pdf", "application/pdf");
-                mailMessage.Attachments.Add(attachment);
-                mailMessage.To.Add(user.Email);
-                mailMessage.Subject = subject;
-                mailMessage.Body = template;
-                mailMessage.IsBodyHtml = true;
-
-                try
-                {
                     await client.SendMailAsync(mailMessage);
                     // Email sent successfully
-                }
-                catch (Exception ex)
-                {
-                    // Handle the exception (log it or display an error message)
-                    Console.WriteLine("Failed to send email: " + ex.Message);
-                }
-
-                //await _emailSender.SendEmailAsync(user.Email, "order delivered", $"" + template + "",pdf);
-
-
-                //  var message = new MailMessage("info@mkgharejewellers.com", user.Email, "", "Please find the attached PDF.");
-                //  message.Attachments.Add(attachment);
-                //  SendEmailWithAttachment(pdf, template, orderdata.Id);
-
-                //using (var client = new SmtpClient("smtp.hostinger.com", 587))
-                //{
-                //    client.EnableSsl = true;
-                //    client.UseDefaultCredentials = false;
-                //    client.Credentials = new NetworkCredential("info@mkgharejewellers.com", "Mkghare@123");
-                //    var message = new MailMessage("info@mkgharejewellers.com", user.Email, "order delivered", template);
-                //    var attachment = new Attachment(new MemoryStream(pdf), "Invoice.pdf", "application/pdf");
-                //    message.Attachments.Add(attachment);
-                //    message.IsBodyHtml = true;
-                //    message.BodyEncoding = Encoding.UTF8;
-                //    client.Send(message);
                 //}
+                //catch (Exception ex)
+                //{
+
+                //    return ex.Message;
+                //}
+
+
 
             }
             else if (orderdata.OrderStatus == "Payment Failed")
@@ -574,6 +575,7 @@ namespace JewelleryWebApplication.Controllers
                 var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "PaymentFailed.html");
                 //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
                 var template = System.IO.File.ReadAllText(viewPath);
+
 
                 //    var template1 = System.IO.File.ReadAllText(viewPath1);
                 //  template = template.Replace("XXXABCXXX", Message);
@@ -596,27 +598,56 @@ namespace JewelleryWebApplication.Controllers
                 template = template.Replace("XXXpriceXXX", MRP.ToString());
                 await _emailSender.SendEmailAsync(user.Email, "Payment Failure - Order #" + orderdata.Id + "", $"" + template + "");
             }
+         
         }
 
+      
 
-        //    public void SendEmailWithAttachment(byte[] attachmentBytes, string template, int id)
+        //public async Task<IActionResult> GeneratePdfFromHtml(string htmlContent)
         //{
-        //    var orderdata = _ordersRepository.All().Where(x => x.Id == id).FirstOrDefault();
-        //    var user = _customerDetailsRepository.All().Where(x => x.Id == orderdata.Customer_Id).FirstOrDefault();
-        //    using (var client = new SmtpClient("smtp.hostinger.com", 587))
+        //    var document = new PdfDocument();
+        //    var html = htmlContent;
+        //    var converter = new BasicConverter(new(PdfTools()));
+        //    var option = new HtmlToPdfDocument
         //    {
-        //        client.EnableSsl = true;
-        //        client.UseDefaultCredentials = false;
-        //        client.Credentials = new NetworkCredential("info@mkgharejewellers.com", "Mkghare@123");
-        //        var message = new MailMessage("info@mkgharejewellers.com", user.Email, "order delivered", template + "please check attached pdf ");
+        //        GlobalSettings =
+        //        {
+        //            //ColorMode = ColorMode.Color,
+        //            Orientation = Orientation.Landscape,
+        //            PaperSize = PaperKind.A4,
 
-        //        var attachment = new Attachment(new MemoryStream(attachmentBytes), "Invoice.pdf", "application/pdf");
-        //        message.Attachments.Add(attachment);
-        //        message.IsBodyHtml = true;
-        //        message.BodyEncoding = Encoding.UTF8;
+        //        },
+        //        Objects =
+        //        {
+        //            new ObjectSettings
+        //            {
+        //                PagesCount=true,
+        //                HtmlContent=html,
+        //                WebSettings={DefaultEncoding="Utf-8"}
+        //            }
+        //        }
+        //    };
 
-        //        client.Send(message);
-        //    }
+        //    string filename = "Invoice.pdf";
+        //    return File( "application/pdf", filename);
+        //}
+
+        //public byte[] ConvertHtmlToPdf(string htmlContent)
+        //{
+        //// Create a PDF converter instance
+        //PdfConverter pdfConverter = new PdfConverter();
+
+        //// Set license key if required
+        // pdfConverter.LicenseKey = "4W9+bn19bn5ue2B+bn1/YH98YHd3d3c=";
+
+        //// Convert HTML content to PDF
+        //byte[] pdfBytes = pdfConverter.GetPdfBytesFromHtmlString(htmlContent);
+
+        //return pdfBytes;
+        //  }
+        //private static byte[] BuildPdf(string html)
+        //{
+        //    return OpenHtmlToPdf.Pdf.From(html).Content();
         //}
 
         [HttpPost("UpdateRates")]
@@ -777,6 +808,9 @@ namespace JewelleryWebApplication.Controllers
 
     }
 
+    internal class HtmlToPdfBuilder
+    {
+    }
 }
 
 

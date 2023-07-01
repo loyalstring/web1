@@ -7,9 +7,21 @@
     <LangVersion>preview</LangVersion>
     <UserSecretsId>9fd6c281-157f-4769-b2b1-968e59dda8bc</UserSecretsId>
   </PropertyGroup>
+
+ 
+
+
   <ItemGroup>
     
-    <PackageReference Include="DinkToPdf" Version="1.0.8" />
+    <PackageReference Include="Aspose.PDF" Version="23.6.0" />
+    <PackageReference Include="itext7.bouncy-castle-adapter" Version="7.1.16" />
+    <!--<PackageReference Include="itext7.bouncy-castle-fips-adapte" Version="7.1.16" />-->
+   
+    <PackageReference Include="itext7.pdfhtml" Version="5.0.0" />
+    
+    <PackageReference Include="iTextSharp" Version="5.5.13.3" />
+    
+    <PackageReference Include="itextsharp.xmlworker" Version="5.5.13.3" />
     
     <PackageReference Include="MailKit" Version="4.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.0" />
@@ -20,6 +32,8 @@
     <PackageReference Include="DocumentFormat.OpenXml" Version="2.20.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="6.0.2" />
+    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.37" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Http" Version="3.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.5">
@@ -29,7 +43,6 @@
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
     <PackageReference Include="MimeKit" Version="4.0.0" />
-    <PackageReference Include="Select.HtmlToPdf.NetCore" Version="23.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
   </ItemGroup>

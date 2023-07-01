@@ -297,5 +297,58 @@ namespace JewelleryWebApplication.Controllers
          
         }
 
+        [HttpPost("UpdateCustomers")]
+        public async Task<IActionResult> UpdateCustomers(tblCustomerDetails model)
+        {
+            var customer = _customerDetailsRepository.All().Where(x => x.Id == model.Id).FirstOrDefault();
+            if (customer != null)
+            {
+                customer.Id = model.Id;
+                customer.FirstName = model.FirstName;
+               
+                    customer.OnlineStatus = model.OnlineStatus;
+             
+                    customer.MiddleName = model.MiddleName;
+                
+                    customer.LastName = model.LastName;
+               
+                    customer.PerAdd = model.PerAdd;
+                
+                    customer.CurrAdd = model.CurrAdd;
+             
+                    customer.Mobile = model.Mobile;
+                
+                    if (model.Email.ToUpper() == customer.Email.ToUpper())
+                    {
+                        return Ok(new { message = "Email Already Exist" });
+                    }
+                    customer.Email = model.Email;
+                    customer.Customer_login_id = customer.Email;
+                
+                    customer.DOB = model.DOB;
+                customer.Password = model.Password;
+
+                customer.PinCode = model.PinCode;
+                
+                    customer.Gender = model.Gender;
+               
+                    customer.OrderValue = model.OrderValue;
+               
+                    customer.OrderId = model.OrderId;
+                
+                    customer.OrderStatus = model.OrderStatus;
+               
+                    customer.OrderCount = "Active";
+                
+
+                await _customerDetailsRepository.UpdateAsync(customer, customer.Id);
+                return Ok(new { status = "success", data = customer });
+
+            }
+
+            return BadRequest();
+
+        }
+
     }
 }

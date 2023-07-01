@@ -38,6 +38,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => options.S
 builder.Services.AddScoped<IRazorViewToStringRenderer, RazorViewToStringRenderer>();
 builder.Services.AddControllers();
 builder.Services.AddRazorPages();
+
 //builder.Services.Configure<RazorpayClient>(builder.Configuration.GetSection("PaymentSettings"));
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -68,6 +69,7 @@ using (var scope = app.Services.CreateScope())
 
    
     var serviceProvider = services.GetRequiredService<IServiceProvider>();
+
     var configuration = services.GetRequiredService<IConfiguration>();
    //  _context.Database.EnsureCreated();
   //  DbInitializer.SeedUsers(serviceProvider, configuration).Wait();
