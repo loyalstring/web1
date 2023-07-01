@@ -24,6 +24,7 @@ namespace JewelleryWebApplication.Models
         public string GovtTax { get; set; }
         public decimal ReceivedAmt { get; set; }
         public string OnlineStatus { get; set; }
+        public string orderNumber { get; set; }
 
     }
 }
