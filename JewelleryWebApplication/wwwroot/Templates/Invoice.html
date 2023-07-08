@@ -19,24 +19,27 @@
             /* A4 width */
             width: 210mm;
             /* A4 height */
-            height: 297mm;
-            display: flex;
+            height: 350mm;
+            /*     display: flex;*/
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             font-size: 10px;
             color: #1a4c2d;
             font-weight: bold;
         }
 
         .billMainOuterBox {
-            width: 85%;
-            margin-top: 20%;
-            height: 55%;
-            display: flex;
-            position: relative;
-            flex-direction: column;
+            width: 90%;
+            margin-top: 300PX;
+            margin-left: 30px;
+            height: 530px;
+            padding-bottom: 300PX;
+            /*  display: flex;*/
+            /* position: center; */
+            /* position:relative; */
+            /* flex-direction: column;*/
             justify-content: center;
             align-items: center;
             border: 1px solid gold;
@@ -45,39 +48,71 @@
 
         .personalDetailsOuterBox {
             width: 100%;
-            height: 25%;
+            height: 150px;
+            left: 30px;
             padding: 5px;
             display: flex;
+            /* flex-direction: row; */
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
             box-sizing: border-box;
             border-bottom: 1px solid gold;
+            position: relative;
         }
 
             .personalDetailsOuterBox hr {
                 width: 60%;
+                position: absolute;
                 border: 1px solid gold;
             }
 
+        .hrTop {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(25%);
+        }
+
+        .hrBottom {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(25%);
+        }
+
         .personalDetailsInnerBox {
-            width: 90%;
-            height: 100%;
-            margin: 5px;
-            /* border: 1.5px solid red; */
-            display: grid;
-            grid-template-columns: 2fr repeat(1, 1fr);
-            align-content: center;
-            list-style: none;
-            line-height: 20px;
+            /* width: 5000px; */
+            /* height: 100%; */
+            display: flex;
+            /* margin: 5px; */
+            /* left: 30px; */
+            line-height: 15px;
             padding: 5px;
             text-transform: uppercase;
+            /* border: 1.5px solid red; */
+            /*display: grid;*/
+            /*grid-template-columns: 2fr repeat(1, 1fr);*/
+            /*align-content: cen*/
+            /*ter;*/
         }
+
+            .personalDetailsInnerBox > div {
+                width: 100%;
+                flex: 1;
+                margin-left: 10px
+            }
+
+                .personalDetailsInnerBox > div p {
+                    margin-bottom: 5px
+                }
 
         .billDetailsTable {
             width: 100%;
-            height: 60%;
-            /* border: 1px solid gold; */
+            /* height: 60%; */
+            height: 250px;
+            left: 30px;
+            border: 1px solid gold;
         }
 
             .billDetailsTable table {
@@ -94,9 +129,12 @@
                 margin: 0;
             }
 
-            .billDetailsTable table tbody {
+            .billDetailsTable tbody {
+                /* display:block; */
+
                 text-align: start;
                 vertical-align: top;
+                background-color: red;
             }
 
             .billDetailsTable th:not(:first-child),
@@ -110,21 +148,25 @@
             }
 
             .billDetailsTable tfoot {
-                border: 2px solid gold;
+                border: 300px solid gold;
                 border-left: none;
                 border-right: none;
+                padding-bottom: 200px;
             }
 
         .gstAndTotalBox {
-            width: 100%;
-            height: 25%;
+            width: 97%;
+            height: 20%;
+            right: 40px;
             text-align: right;
             line-height: 5px;
+            margin-right: 100px;
+            margin-bottom: 300px;
             /* border: 2px solid green; */
         }
 
             .gstAndTotalBox p {
-                margin-inline-end: 10px;
+                margin-inline: 30px;
             }
 
         .borderImage {
@@ -138,56 +180,85 @@
             opacity: 1;
         }
 
+        .gstNumber {
+            position: absolute;
+            width: 200px;
+            height: 240px;
+            background-image: url("https://jewellerywebapplications.blob.core.windows.net/template/GSTNo.jpg");
+            background-repeat: no-repeat;
+            background-size: contain;
+            z-index: -1;
+            opacity: 2;
+        }
+
+        .topINvoice {
+            margin-top: -8px;
+            top: 30px;
+            left: 255px;
+            transform: rotate(0deg);
+        }
+
         .topLeft {
-            margin-top: -2px;
-            top: 0;
-            left: 0;
+            margin-top: 260px;
+            top: 30px;
+            left: 20px;
             transform: rotate(90deg);
         }
 
+
         .topRight {
-            margin-right: -2px;
-            top: 0;
-            right: 0;
+            margin-top: 260px;
+            top: 30px;
+            right: 30px;
             transform: rotate(180deg);
         }
 
         .bottomLeft {
-            bottom: 0;
-            left: 0;
-            margin-left: -2px;
+            bottom: 185px;
+            left: 20px;
+            /*            margin-left: 30px;*/
         }
 
         .bottomRight {
-            bottom: 0;
-            right: 0;
-            margin-right: -2px;
+            bottom: 185px;
+            right: 30px;
+            /*margin-right: -2px;*/
             transform: rotate(270deg);
         }
     </style>
 </head>
 
 <body>
+    <!-- <img src="https://jewellerywebapplications.blob.core.windows.net/template/GSTNo.jpg" style="height:30px;width:20px;""> -->
     <div class="billMainOuterBox">
+        <div class="gstNumber topINvoice"></div>
         <div class="borderImage topLeft"></div>
         <div class="borderImage topRight"></div>
         <div class="borderImage bottomLeft"></div>
         <div class="borderImage bottomRight"></div>
         <div class="personalDetailsOuterBox">
-            <hr />
-            <div class="personalDetailsInnerBox">
-                <div class="col-6">
+            <hr class="hrTop">
+            </hr>
+            <div class="personalDetailsInnerBox" style="width:100%">
+                <div style="flex:1.2;">
+
                     <p>NAME - XXXXNameXXX</p>
-                    <p style="word-wrap:unset">ADDRESS - XXXXcuraddressXXX</p>
+                    <p>ADDRESS - XXXXcuraddressXXX</p>
                     <p>MOBILE - XXXXmobileXXX</p>
+
+
                 </div>
-                <div class="col-6">
-                    <p>INVOICE NO - XXXXinvoiceXXX</p>
+                <div>
+                    <p>Invoice NO - XXXXorderXXX</p>
                     <p>DATE - XXXXorderdateXXX</p>
+
                     <p style="text-transform: none;">EMAIL - XXXXemailXXX</p>
-               </div>
+
+                </div>
             </div>
-            <hr />
+            <hr class="hrBottom">
+            </hr>
+
         </div>
         <div class="billDetailsTable">
             <table>
@@ -195,7 +266,7 @@
                     <tr>
                         <th>HSN</th>
                         <th>PARTICULARS</th>
-
+                        <th>QTY</th>
                         <th>PURITY</th>
                         <th>GR.WT.</th>
                         <th>STONE WT.</th>
@@ -207,8 +278,9 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>7113</td>
-                        <td>XXXXproductnameXXX<span style="text-align:right"> XXXXqtyXXX</span></td>
+                        <td>XXXXhsncodeXXX</td>
+                        <td>XXXXproductnameXXX </td>
+                        <td>XXXXqtyXXX</td>
                         <td>XXXXpurityXXX</td>
                         <td>XXXXgrwtXXX</td>
                         <td>XXXXstonewtXXX</td>
@@ -220,9 +292,9 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3">TOTAL SALES AMOUNT</td>
+                        <td colspan="4">TOTAL SALES AMOUNT</td>
                         <td>XXXXtotalgrwtXXX</td>
-                        <td>XXXXstonewtXXX</td>
+                        <td>XXXXtotalstwtXXX</td>
                         <td>XXXXtotalnetwtXXX</td>
                         <td colspan="3" style="text-align:right">XXXXtotalamountXXX</td>
                     </tr>
@@ -235,13 +307,12 @@
             <p>SGST 1.5 % - XXXsgstXXX</p>
             <p style="margin-bottom: 20px;">TOTAL TAX - XXXtotaltaxXXX</p>
             <p>NET AMOUNT- XXXnetamtXXX</p>
-            <p>CASH - XXXnetamtXXX</p>
+            <p>XXXXpaymentmodeXXX - XXXnetamtXXX</p>
         </div>
     </div>
 
 
-    </div>
-    </div>
+
 </body>
 
 </html>

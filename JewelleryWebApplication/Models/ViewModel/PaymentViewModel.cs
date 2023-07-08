@@ -2,7 +2,7 @@
 {
     public class PaymentViewModel
     {
-        public int orderId { get; set; }
+        public string orderNumber { get; set; }
         public string id { get; set; }
         public string mobile { get; set; }
 

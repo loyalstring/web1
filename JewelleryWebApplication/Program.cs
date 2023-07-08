@@ -9,7 +9,8 @@ using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using JewelleryWebApplication.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
-
+using Microsoft.AspNetCore.Authentication.Facebook;
+using Microsoft.AspNetCore.Authentication.Google;
 var builder = WebApplication.CreateBuilder(args);
 
 //var connection = String.Empty;
@@ -36,9 +37,19 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => options.S
 builder.Services.AddScoped<IRazorViewToStringRenderer, RazorViewToStringRenderer>();
 builder.Services.AddControllers();
 builder.Services.AddRazorPages();
-
+builder.Services.AddAuthentication()
+        .AddFacebook(options =>
+        {
+            options.AppId = "YOUR_FACEBOOK_APP_ID";
+            options.AppSecret = "YOUR_FACEBOOK_APP_SECRET";
+        });
 //builder.Services.Configure<RazorpayClient>(builder.Configuration.GetSection("PaymentSettings"));
-
+builder.Services.AddAuthentication()
+        .AddGoogle(options =>
+        {
+            options.ClientId = "967239436655-921es1fvvtus467jhia1dlmv4m25ad7f.apps.googleusercontent.com";
+            options.ClientSecret = "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\r\n";
+        });
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddSingleton<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, EmailSender>();
 
@@ -56,18 +67,14 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseHsts();
-
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-
-   
+    var services = scope.ServiceProvider;   
     var serviceProvider = services.GetRequiredService<IServiceProvider>();
-
     var configuration = services.GetRequiredService<IConfiguration>();
    //  _context.Database.EnsureCreated();
   //  DbInitializer.SeedUsers(serviceProvider, configuration).Wait();
@@ -75,10 +82,8 @@ using (var scope = app.Services.CreateScope())
 app.UseHttpsRedirection();
 app.UseHsts();
 app.UseCors(options => options.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
-
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 app.UseStaticFiles();
-
 app.Run();

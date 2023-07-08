@@ -147,6 +147,9 @@ namespace JewelleryWebApplication.Migrations
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("OnlineStatus")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("StatusType")
                         .HasColumnType("bit");
 
@@ -220,6 +223,9 @@ namespace JewelleryWebApplication.Migrations
                     b.Property<string>("MetalName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("OnlineStatus")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ProductName")
                         .HasColumnType("nvarchar(max)");
 
@@ -253,6 +259,9 @@ namespace JewelleryWebApplication.Migrations
 
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("OnlineStatus")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ProductType")
                         .HasColumnType("nvarchar(max)");
@@ -309,6 +318,9 @@ namespace JewelleryWebApplication.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Mobile")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OnlineStatus")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OrderCount")
@@ -375,6 +387,9 @@ namespace JewelleryWebApplication.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("OnlineStatus")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ParentsCategory")
                         .HasColumnType("nvarchar(max)");
 
@@ -417,6 +432,9 @@ namespace JewelleryWebApplication.Migrations
                     b.Property<string>("Offer")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("OnlineStatus")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("OrderStatus")
                         .HasColumnType("nvarchar(max)");
 
@@ -437,6 +455,9 @@ namespace JewelleryWebApplication.Migrations
 
                     b.Property<bool>("StatusType")
                         .HasColumnType("bit");
+
+                    b.Property<string>("orderNumber")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -538,6 +559,9 @@ namespace JewelleryWebApplication.Migrations
 
                     b.Property<decimal>("NetWt")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("OnlineStatus")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PartyTypeId")
                         .HasColumnType("int");
@@ -641,6 +665,9 @@ namespace JewelleryWebApplication.Migrations
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("OnlineStatus")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ProductTitle")
                         .HasColumnType("nvarchar(max)");
 
@@ -677,6 +704,9 @@ namespace JewelleryWebApplication.Migrations
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("OnlineStatus")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Purity")
                         .HasColumnType("nvarchar(max)");
 
@@ -710,6 +740,9 @@ namespace JewelleryWebApplication.Migrations
 
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("OnlineStatus")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Purity")
                         .HasColumnType("nvarchar(max)");
@@ -756,6 +789,9 @@ namespace JewelleryWebApplication.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Mobile")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OnlineStatus")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Password")

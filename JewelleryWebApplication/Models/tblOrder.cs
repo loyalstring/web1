@@ -25,6 +25,21 @@ namespace JewelleryWebApplication.Models
         public decimal ReceivedAmt { get; set; }
         public string OnlineStatus { get; set; }
         public string orderNumber { get; set; }
+        public string Rate { get; set; }
+      
+        public string GrossWt { get; set;}
+        public string NetWt { get; set; }
+        public string StoneWt { get; set; }
+        public string MRP { get; set; }
+        public string CategoryName { get; set; }
+        public string InvoiceNo { get; set; }
+        [NotMapped]
+        public List<Product> Products { get; set; }
 
+    }
+    public class Product
+    {
+        public int Product_id { get; set; }
+  
     }
 }

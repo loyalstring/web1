@@ -8,13 +8,18 @@ using Microsoft.AspNetCore.Identity;
 using JewelleryWebApplication.Services;
 using JewelleryWebApplication.Views;
 using Microsoft.AspNetCore.Identity.UI.V5.Pages.Account.Internal;
+using System.Web;
+using Castle.Core.Resource;
+using JewelleryWebApplication.Models.APIModel;
+using DocumentFormat.OpenXml.Presentation;
 
 namespace JewelleryWebApplication.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class CustomerDetailsController : ControllerBase
-    {
+    { 
+        private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IRazorViewToStringRenderer _razorViewToStringRenderer;
@@ -26,9 +31,10 @@ namespace JewelleryWebApplication.Controllers
         private readonly IOrdersRepository _ordersRepository;
       
         private readonly IMaterialCategoryRepository _materialCategoryRepository;
-        public CustomerDetailsController(UserManager<ApplicationUser> userManager, IEmailSender emailSender, ILogger<RegisterModel> logger, IRazorViewToStringRenderer razorViewToStringRenderer,IWebHostEnvironment webHostEnvironment, IOrdersRepository ordersRepository, ICustomerDetailsRepository customerDetailsRepository,
+        public CustomerDetailsController(SignInManager<ApplicationUser> signInManager,UserManager<ApplicationUser> userManager, IEmailSender emailSender, ILogger<RegisterModel> logger, IRazorViewToStringRenderer razorViewToStringRenderer,IWebHostEnvironment webHostEnvironment, IOrdersRepository ordersRepository, ICustomerDetailsRepository customerDetailsRepository,
             IRateRepository rateRepository, IPurityRepository purityRepository, IProductRepository productRepository, IMaterialCategoryRepository materialCategoryRepository, IStaffRepository staffRepository)
         {
+            _signInManager = signInManager;
             _userManager = userManager;
             _emailSender = emailSender;
             _logger = logger;
@@ -96,21 +102,73 @@ namespace JewelleryWebApplication.Controllers
                 {
                     return Ok(new { message = "email already exist" });
                 }
-                Customer.Password = model.Mobile;
+                Customer.Password = model.Password;
 
                 Customer.Customer_login_id = Customer.Email;
                 Customer.PinCode = model.PinCode;
                 Customer.DOB = model.DOB;
-                Customer.OnlineStatus = "Active";
-                await _customerDetailsRepository.InsertAsync(Customer);
-             //   await CreateUserAsync(Customer.Email, Customer.Customer_login_id, Customer.Mobile,Customer.Password);
+                Customer.OnlineStatus = "Inactive";
 
+                await _customerDetailsRepository.InsertAsync(Customer);
+                //   await CreateUserAsync(Customer.Email, Customer.Customer_login_id, Customer.Mobile,Customer.Password);
+               // await sendEmailConfirmation(Customer.Email);
                 await sendEmail(Customer.Email);
 
                 return Ok(new { status = "Success", data = Customer });
             }
             return BadRequest();
         }
+        [HttpPost("UpdateAcoount")]
+        public async Task<IActionResult> UpdateAcoount(ConfirmAccountViewModel model)
+        {
+            var user = _customerDetailsRepository.All().Where(x => x.Id == model.Id).FirstOrDefault();
+            if (user != null)
+            {
+                user.Id = model.Id;
+                user.StatusType = model.StatusType;
+                user.OnlineStatus = model.OnlineStatus;
+                await _customerDetailsRepository.UpdateAsync(user, user.Id);
+                await sendEmailConfirmation(user.Email);
+                return Ok(new { status = "Success", data = user });
+
+            }
+            return BadRequest();
+
+        }
+        [HttpPost("ConfirmAcoount")]
+        public async Task<IActionResult> ConfirmAcoount(string OnlineStatus,bool StatusType,int Id )
+        {
+            var user= _customerDetailsRepository.All().Where(x=>x.Id==Id).FirstOrDefault();
+            if (user!=null) {
+                user.Id = Id;
+                user.StatusType = StatusType;
+                user.OnlineStatus = OnlineStatus;
+                await _customerDetailsRepository.UpdateAsync(user,user.Id);
+                await sendEmailConfirmation(user.Email);
+                return Ok(new { status = "Success", data = user });
+
+            }
+            return BadRequest();
+
+        }
+      
+        
+
+        private async Task sendEmailConfirmation(string Email)
+        {
+            
+            var user = _customerDetailsRepository.All().Where(x => x.Email == Email).FirstOrDefault();
+            var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "ConfirmAccount.html");
+            var template = System.IO.File.ReadAllText(viewPath);
+            //  string activationUrl = $"https://localhost:7020/api/CustomerDetails/ConfirmAacoount?OnlineStatus={"Active"}&StatusType={true}&Id={user.Id}";
+            var activationUrl = "https://mkgharejewellers.com";
+            template = template.Replace("XXXCallUrlXXX", activationUrl);
+            
+            // template = template.Replace("XXXXvalueXXX", user.OrderValue);
+            // template = template.Replace("XXXStatusXXX", user.OrderStatus);
+            await _emailSender.SendEmailAsync(user.Email, "Confirm Account", $"" + template + "");
+        }
+
 
         private async Task CreateUserAsync(string Email, string UserName, string Mobile,string Password)
         {
@@ -318,12 +376,9 @@ namespace JewelleryWebApplication.Controllers
              
                     customer.Mobile = model.Mobile;
                 
-                    if (model.Email.ToUpper() == customer.Email.ToUpper())
-                    {
-                        return Ok(new { message = "Email Already Exist" });
-                    }
+                   
                     customer.Email = model.Email;
-                    customer.Customer_login_id = customer.Email;
+                    customer.Customer_login_id = customer.Customer_login_id;
                 
                     customer.DOB = model.DOB;
                 customer.Password = model.Password;
@@ -338,7 +393,7 @@ namespace JewelleryWebApplication.Controllers
                 
                     customer.OrderStatus = model.OrderStatus;
                
-                    customer.OrderCount = "Active";
+                    customer.OrderCount = model.OrderCount;
                 
 
                 await _customerDetailsRepository.UpdateAsync(customer, customer.Id);
@@ -349,6 +404,21 @@ namespace JewelleryWebApplication.Controllers
             return BadRequest();
 
         }
+        [HttpGet("signin-facebook")]
+        public IActionResult SignInFacebook()
+        {
+            var redirectUrl = "/"; // Redirect URL after successful authentication
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties("Facebook", redirectUrl);
+            return Challenge(properties, "Facebook");
+        }
+        [HttpGet("signin-google")]
+        public IActionResult SignInGoogle()
+        {
+            var redirectUrl = "/"; // Redirect URL after successful authentication
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", redirectUrl);
+            return Challenge(properties, "Google");
+        }
+
 
     }
 }

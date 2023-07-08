@@ -91,6 +91,7 @@ namespace JewelleryWebApplication.Migrations
                     firm_details = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     gst_no = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     central_gst_no = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OnlineStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StatusType = table.Column<bool>(type: "bit", nullable: false)
@@ -110,6 +111,7 @@ namespace JewelleryWebApplication.Migrations
                     BoxName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EmptyWeight = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ProductName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OnlineStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StatusType = table.Column<bool>(type: "bit", nullable: false)
@@ -141,6 +143,7 @@ namespace JewelleryWebApplication.Migrations
                     OrderValue = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     OrderStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     OrderId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OnlineStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StatusType = table.Column<bool>(type: "bit", nullable: false)
@@ -160,6 +163,7 @@ namespace JewelleryWebApplication.Migrations
                     Category = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Label = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TodaysRate = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OnlineStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StatusType = table.Column<bool>(type: "bit", nullable: false)
@@ -183,6 +187,7 @@ namespace JewelleryWebApplication.Migrations
                     Password = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Mobile = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OnlineStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -313,6 +318,7 @@ namespace JewelleryWebApplication.Migrations
                     Slug = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     HSNCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ShortCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OnlineStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StatusType = table.Column<bool>(type: "bit", nullable: false)
@@ -339,6 +345,7 @@ namespace JewelleryWebApplication.Migrations
                     Collection_Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Slug = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Label = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OnlineStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StatusType = table.Column<bool>(type: "bit", nullable: false)
@@ -366,6 +373,7 @@ namespace JewelleryWebApplication.Migrations
                     Slug = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     HSNCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OnlineStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StatusType = table.Column<bool>(type: "bit", nullable: false)
@@ -392,6 +400,7 @@ namespace JewelleryWebApplication.Migrations
                     Category_id = table.Column<int>(type: "int", nullable: false),
                     Category_Label = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Purity = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OnlineStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StatusType = table.Column<bool>(type: "bit", nullable: false)
@@ -410,7 +419,7 @@ namespace JewelleryWebApplication.Migrations
                         column: x => x.Staff_id,
                         principalTable: "tblStaff",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -463,6 +472,7 @@ namespace JewelleryWebApplication.Migrations
                     CollectionId = table.Column<int>(type: "int", nullable: false),
                     PartyTypeId = table.Column<int>(type: "int", nullable: false),
                     BoxId = table.Column<int>(type: "int", nullable: false),
+                    OnlineStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StatusType = table.Column<bool>(type: "bit", nullable: false)
@@ -493,13 +503,13 @@ namespace JewelleryWebApplication.Migrations
                         column: x => x.CollectionId,
                         principalTable: "tblCollection",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_tblProducts_tblProductType_ProductTypeId",
                         column: x => x.ProductTypeId,
                         principalTable: "tblProductType",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_tblProducts_tblPurities_PurityId",
                         column: x => x.PurityId,
@@ -511,7 +521,7 @@ namespace JewelleryWebApplication.Migrations
                         column: x => x.Entryby_Staff_id,
                         principalTable: "tblStaff",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -529,6 +539,8 @@ namespace JewelleryWebApplication.Migrations
                     Qty = table.Column<int>(type: "int", nullable: false),
                     GovtTax = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ReceivedAmt = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    OnlineStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    orderNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StatusType = table.Column<bool>(type: "bit", nullable: false)
