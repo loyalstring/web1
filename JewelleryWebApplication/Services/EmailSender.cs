@@ -36,11 +36,11 @@ namespace JewelleryWebApplication.Services
             //    Port = Convert.ToInt32(_configRoot["EmailSettings.MailPort"]),
             //    EnableSsl = Convert.ToBoolean(_configRoot["EmailSettings.SSL"])
             //};
-
+            var sender = new MailAddress("info@mkgharejewellers.com", "Ghare Jewellers");
             var mailMessage = new MailMessage
             {
-                From = new MailAddress("info@mkgharejewellers.com")
-              
+               From = sender,
+                
             };
             mailMessage.To.Add(email);
             mailMessage.Subject = subject;

@@ -26,6 +26,10 @@ using Castle.Core.Resource;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using JewelleryWebApplication.Repository;
 using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.InkML;
+using Microsoft.Extensions.Azure;
+using iText.Commons.Actions.Contexts;
+using DocumentFormat.OpenXml.Vml;
 
 namespace JewelleryWebApplication.Controllers
 {
@@ -33,6 +37,7 @@ namespace JewelleryWebApplication.Controllers
     [ApiController]
     public class OrdersController : ControllerBase
     {  // public readonly IUnitOfWork _unitOfWork;
+        private readonly IOrdersItemDetailsRepository _ordersItemDetailsRepository;
         private readonly ICollectionRepository _collectionRepository;
         private readonly IWebHostEnvironment _environment;
         private readonly IConfiguration _configuration;
@@ -47,10 +52,11 @@ namespace JewelleryWebApplication.Controllers
         private readonly IEmailSender _emailSender;
         private readonly EmailSettings _emailSettings;
 
-     
-        public OrdersController(ICollectionRepository collectionRepository, IWebHostEnvironment webHostEnvironment, IConfiguration configuration, IOrdersRepository ordersRepository, ICustomerDetailsRepository customerDetailsRepository, IRateRepository rateRepository, IPurityRepository purityRepository, IProductRepository productRepository, IMaterialCategoryRepository materialCategoryRepository, IProductTypeRepository productTypeRepository, IStaffRepository staffRepository, IEmailSender emailSender, IOptions<EmailSettings> emailSettings)
+
+        public OrdersController(IOrdersItemDetailsRepository ordersItemDetailsRepository, ICollectionRepository collectionRepository, IWebHostEnvironment webHostEnvironment, IConfiguration configuration, IOrdersRepository ordersRepository, ICustomerDetailsRepository customerDetailsRepository, IRateRepository rateRepository, IPurityRepository purityRepository, IProductRepository productRepository, IMaterialCategoryRepository materialCategoryRepository, IProductTypeRepository productTypeRepository, IStaffRepository staffRepository, IEmailSender emailSender, IOptions<EmailSettings> emailSettings)
         {
             //    _unitOfWork = unitOfWork;
+            _ordersItemDetailsRepository = ordersItemDetailsRepository;
             _collectionRepository = collectionRepository;
             _environment = webHostEnvironment;
             _configuration = configuration;
@@ -64,7 +70,7 @@ namespace JewelleryWebApplication.Controllers
             _productrepository = productRepository;
             _emailSender = emailSender;
             _emailSettings = emailSettings.Value;
-          
+
         }
 
 
@@ -172,11 +178,11 @@ namespace JewelleryWebApplication.Controllers
         public async Task<IActionResult> InsertOrders(tblOrder model)
         {
 
-            var productdata = _productrepository.All().Include(x=>x.tblMaterialCategory).Where(x => x.Id == model.Product_id).FirstOrDefault();
-            var puritydata = _purityRepository.All().Where(x=>x.Id==productdata.PurityId).FirstOrDefault();
+            var productdata = _productrepository.All().Include(x => x.tblMaterialCategory).Where(x => x.Id == model.Product_id).FirstOrDefault();
+            var puritydata = _purityRepository.All().Where(x => x.Id == productdata.PurityId).FirstOrDefault();
             var emaildata = _customerDetailsRepository.All().Where(x => x.Id == model.Customer_Id).FirstOrDefault();
             string productlabel = _materialCategoryRepository.All().Where(x => x.Id == productdata.Category_id).Select(X => X.Name).FirstOrDefault();
-           
+
             int count = _ordersRepository.All().Select(x => x.CategoryName).Count();
             char categorycode = productlabel[0];
             int x = count + 1;
@@ -198,11 +204,16 @@ namespace JewelleryWebApplication.Controllers
             }
             int endYear = year + 1;
             string financialYear = $"{year}-{endYear}";
-            var invoiceno =  x + "/FY" + financialYear;
+            var invoiceno = x + "/FY" + financialYear;
 
             if (ModelState.IsValid)
             {
                 tblOrder order = new tblOrder();
+                var isexist = _ordersRepository.All().Where(x => x.orderNumber.ToUpper() == orderNumber.ToUpper()).FirstOrDefault();
+                if (isexist != null)
+                {
+                    return Ok(new { message = "Regenerate orders" });
+                }
                 order.orderNumber = orderNumber.ToString();
                 order.InvoiceNo = invoiceno;
                 order.Customer_Id = model.Customer_Id;
@@ -215,7 +226,7 @@ namespace JewelleryWebApplication.Controllers
                 order.ReceivedAmt = model.ReceivedAmt;
                 order.OnlineStatus = "Active";
                 order.OrderStatus = model.OrderStatus;
-                order.Rate= puritydata.TodaysRate;
+                order.Rate = puritydata.TodaysRate;
                 order.GrossWt = productdata.grosswt.ToString();
                 order.NetWt = productdata.NetWt.ToString();
                 order.StoneWt = productdata.StoneWeight;
@@ -233,7 +244,7 @@ namespace JewelleryWebApplication.Controllers
             return BadRequest();
         }
 
-     
+
 
         [HttpPost("InsertRates")]
         public async Task<IActionResult> InsertRates(tblRates model)
@@ -262,35 +273,34 @@ namespace JewelleryWebApplication.Controllers
             {
                 if (model.OrderStatus == "Paid")
                 {
-                 
                     orderdata.OrderStatus = "Paid";
                     await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
                     await sendEmail(orderdata.Id);
                     return Ok(new { Status = "Success", data = orderdata });
                 }
-             
+
                 else if (model.OrderStatus == "Delivered")
                 {
-                    
+
                     orderdata.OnlineStatus = model.OnlineStatus;
                     orderdata.OrderStatus = "Delivered";
                     await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
 
-                     await sendEmail(orderdata.Id);
+                    await sendEmail(orderdata.Id);
                     return Ok(new { Status = "Success", data = orderdata });
                 }
                 else if (model.OrderStatus == "Payment Failed")
                 {
-                  
+
                     orderdata.OnlineStatus = model.OnlineStatus;
                     orderdata.OrderStatus = "Payment Failed";
                     await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
                     await sendEmail(orderdata.Id);
                     return Ok(new { Status = "Success", data = orderdata });
                 }
-                else if(model.OrderStatus == "Shipped")
+                else if (model.OrderStatus == "Shipped")
                 {
-                   
+
                     orderdata.OnlineStatus = model.OnlineStatus;
                     orderdata.OrderStatus = "Shipped";
                     await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
@@ -311,7 +321,7 @@ namespace JewelleryWebApplication.Controllers
             var user = _customerDetailsRepository.All().Where(x => x.Id == orderdata.Customer_Id).FirstOrDefault();
             var productdata = _productrepository.All().Where(x => x.Id == orderdata.Product_id).FirstOrDefault();
             var puritydata = _purityRepository.All().Where(x => x.Id == productdata.PurityId).FirstOrDefault();
-            var categorylabel=_materialCategoryRepository.All().Where(x=>x.Id==productdata.Category_id).Select(x=>x.Label).FirstOrDefault();
+            var categorylabel = _materialCategoryRepository.All().Where(x => x.Id == productdata.Category_id).Select(x => x.Label).FirstOrDefault();
             var producttype = _productTypeRepository.All().Where(x => x.Id == productdata.ProductTypeId).FirstOrDefault();
             decimal totalsaleamount;
             decimal netamount;
@@ -336,7 +346,7 @@ namespace JewelleryWebApplication.Controllers
                 cgstamount = (Convert.ToDecimal(cgst) * MRP) / 100;
                 sgstamount = (Convert.ToDecimal(sgst) * MRP) / 100;
                 totaltax = cgstamount + sgstamount;
-                totalsaleamount = MRP*orderdata.Qty;
+                totalsaleamount = MRP * orderdata.Qty;
                 totalnetwt = productdata.NetWt;
                 var finalPrice = MRP + totaltax;
                 grossTotalRate = totalsaleamount;
@@ -386,14 +396,14 @@ namespace JewelleryWebApplication.Controllers
 
             if (orderdata.OrderStatus == "Paid")
             {
-                var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderConfirmation.html");
+                var viewPath = System.IO.Path.Combine(_environment.WebRootPath + "/Templates", "OrderConfirmation.html");
                 var template = System.IO.File.ReadAllText(viewPath);
 
                 template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
                 template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                template = template.Replace("XXXXcuraddressXXX", user.PerAdd);
+                template = template.Replace("XXXXcuraddressXXX", user.currAddStreet + " " + user.currAddTown + " " + user.currAddState + " " + user.currAddPinCode);
                 template = template.Replace("XXXXemailXXX", user.Email);
-                template = template.Replace("XXXXpincodeXXX", user.PinCode);
+                template = template.Replace("XXXXpincodeXXX", user.currAddPinCode);
                 template = template.Replace("XXXXquantityXXX", orderdata.Qty.ToString());
                 template = template.Replace("XXXXsizeXXX", productdata.Size);
                 template = template.Replace("XXXXimagesXXX", data);
@@ -422,7 +432,7 @@ namespace JewelleryWebApplication.Controllers
 
                 Response<BlobDownloadInfo> downloadResponse = await blobClient.DownloadAsync();
                 var template1 = await new StreamReader(downloadResponse.Value.Content).ReadToEndAsync();
-                var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderDelivered.html");
+                var viewPath = System.IO.Path.Combine(_environment.WebRootPath + "/Templates", "OrderDelivered.html");
                 //  var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
                 var template = System.IO.File.ReadAllText(viewPath);
                 //var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
@@ -432,9 +442,9 @@ namespace JewelleryWebApplication.Controllers
                 //  template = template.Replace("XXXABCXXX", Message);
                 template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
                 template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
+                template = template.Replace("XXXXcuraddressXXX", user.currAddStreet + " " + user.currAddTown + " " + user.currAddPinCode);
                 template = template.Replace("XXXXemailXXX", user.Email);
-                template = template.Replace("XXXXpincodeXXX", user.PinCode);
+                template = template.Replace("XXXXpincodeXXX", user.currAddPinCode);
                 template = template.Replace("XXXXquantityXXX", productdata.Quantity.ToString());
                 template = template.Replace("XXXXsizeXXX", productdata.Size);
                 template = template.Replace("XXXXimagesXXX", data);
@@ -450,14 +460,14 @@ namespace JewelleryWebApplication.Controllers
                 template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
                 template = template.Replace("XXXnetamtXXX", netamount.ToString());
                 template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                template1 = template1.Replace("XXXXcuraddressXXX", user.CurrAdd);
+                template1 = template1.Replace("XXXXcuraddressXXX", user.currAddStreet + " " + user.currAddTown + " " + user.currAddState + " " + user.currAddPinCode);
                 template1 = template1.Replace("XXXXemailXXX", user.Email);
-                template1 = template1.Replace("XXXXpincodeXXX", user.PinCode);
-              //  template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template1 = template1.Replace("XXXXpincodeXXX", user.currAddPinCode);
+                //  template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
                 template1 = template1.Replace("XXXXorderXXX", orderdata.InvoiceNo);
                 template1 = template1.Replace("XXXXorderdateXXX", orderdata.CreatedOn.ToString("dd/MM/yyyy"));
                 template1 = template1.Replace("XXXXmobileXXX", user.Mobile);
-                template1 = template1.Replace("XXXXproductnameXXX", productdata.Category_Name + " "+productdata.Product_Name);
+                template1 = template1.Replace("XXXXproductnameXXX", productdata.Category_Name + " " + productdata.Product_Name);
                 template1 = template1.Replace("XXXXhsncodeXXX", producttype.HSNCode);
                 template1 = template1.Replace("XXXXqtyXXX", orderdata.Qty.ToString());
                 template1 = template1.Replace("XXXXpurityXXX", productdata.purity.ToString());
@@ -474,7 +484,7 @@ namespace JewelleryWebApplication.Controllers
                 template1 = template1.Replace("XXXcgstXXX", cgstamount.ToString());
                 template1 = template1.Replace("XXXsgstXXX", sgstamount.ToString());
                 template1 = template1.Replace("XXXtotaltaxXXX", totaltax.ToString());
-                template1 = template1.Replace("XXXXpincodeXXX", user.PinCode);
+                template1 = template1.Replace("XXXXpincodeXXX", user.currAddPinCode);
                 template1 = template1.Replace("XXXXtotalXXX", grossTotalRate.ToString());
                 template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
                 template1 = template1.Replace("XXXXtotalnetwtXXX", totalnetwt.ToString());
@@ -497,7 +507,8 @@ namespace JewelleryWebApplication.Controllers
 
                     pdfBytes = stream.ToArray();
                 }
-                var subject = "order delivered";
+                var sender = new MailAddress("info@mkgharejewellers.com", "Ghare Jewellers");
+                var subject = "Order Delivered";
                 var client = new SmtpClient(_emailSettings.MailServer)
                 {
                     UseDefaultCredentials = false,
@@ -507,8 +518,9 @@ namespace JewelleryWebApplication.Controllers
                 };
                 var mailMessage = new MailMessage
                 {
-                    From = new MailAddress("info@mkgharejewellers.com")
+                    From = sender,
                 };
+
                 var attachment = new Attachment(new MemoryStream(pdfBytes), "Invoice.pdf", "application/pdf");
                 mailMessage.Attachments.Add(attachment);
                 mailMessage.To.Add(user.Email);
@@ -528,7 +540,7 @@ namespace JewelleryWebApplication.Controllers
             }
             else if (orderdata.OrderStatus == "Payment Failed")
             {
-                var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "PaymentFailed.html");
+                var viewPath = System.IO.Path.Combine(_environment.WebRootPath + "/Templates", "PaymentFailed.html");
                 //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
                 var template = System.IO.File.ReadAllText(viewPath);
 
@@ -537,9 +549,9 @@ namespace JewelleryWebApplication.Controllers
                 //  template = template.Replace("XXXABCXXX", Message);
 
                 template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
+                template = template.Replace("XXXXcuraddressXXX", user.currAddStreet + " " + user.currAddTown + " " + user.currAddState + " " + user.currAddPinCode);
                 template = template.Replace("XXXXemailXXX", user.Email);
-                template = template.Replace("XXXXpincodeXXX", user.PinCode);
+                template = template.Replace("XXXXpincodeXXX", user.currAddPinCode);
                 template = template.Replace("XXXXqtyXXX", orderdata.Qty.ToString());
                 template = template.Replace("XXXXsizeXXX", productdata.Size);
                 template = template.Replace("XXXXimagesXXX", data);
@@ -555,9 +567,9 @@ namespace JewelleryWebApplication.Controllers
 
                 await _emailSender.SendEmailAsync(user.Email, "Payment Failure - Order #" + orderdata.Id + "", $"" + template + "");
             }
-            else if (orderdata.OrderStatus == "Order Placed")
+            else if (orderdata.OrderStatus == "Shipped")
             {
-                var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "orderOnTheWay.html");
+                var viewPath = System.IO.Path.Combine(_environment.WebRootPath + "/Templates", "orderOnTheWay.html");
                 //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
                 var template = System.IO.File.ReadAllText(viewPath);
 
@@ -566,9 +578,9 @@ namespace JewelleryWebApplication.Controllers
                 //  template = template.Replace("XXXABCXXX", Message);
 
                 template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
+                template = template.Replace("XXXXcuraddressXXX", user.currAddStreet + " " + user.currAddTown + " " + user.currAddState);
                 template = template.Replace("XXXXemailXXX", user.Email);
-                template = template.Replace("XXXXpincodeXXX", user.PinCode);
+                template = template.Replace("XXXXpincodeXXX", user.currAddPinCode);
                 template = template.Replace("XXXXquantityXXX", productdata.Quantity.ToString());
                 template = template.Replace("XXXXsizeXXX", productdata.Size);
                 template = template.Replace("XXXXimagesXXX", data);
@@ -586,7 +598,7 @@ namespace JewelleryWebApplication.Controllers
                 template = template.Replace("XXXnetamtXXX", netamount.ToString());
                 await _emailSender.SendEmailAsync(user.Email, "Your Order Has Been Shipped!", $"" + template + "");
             }
-            }
+        }
         [HttpPost("DownloadPDF")]
         public async Task<IActionResult> DownloadPDF(tblOrder model)
         {
@@ -677,19 +689,19 @@ namespace JewelleryWebApplication.Controllers
             BlobClient blobClient = containerClient.GetBlobClient(blobName);
 
             Response<BlobDownloadInfo> downloadResponse = await blobClient.DownloadAsync();
-            var template1 =await  new StreamReader(downloadResponse.Value.Content).ReadToEndAsync();
+            var template1 = await new StreamReader(downloadResponse.Value.Content).ReadToEndAsync();
             //var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
             //  var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
-         //   var template1 = System.IO.File.ReadAllText(viewPath);
+            //   var template1 = System.IO.File.ReadAllText(viewPath);
             template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-            template1 = template1.Replace("XXXXcuraddressXXX", user.PerAdd);
+            template1 = template1.Replace("XXXXcuraddressXXX", user.currAddStreet + " " + user.currAddTown + " " + user.currAddState);
             template1 = template1.Replace("XXXXemailXXX", user.Email);
-            template1 = template1.Replace("XXXXpincodeXXX", user.PinCode);
+            template1 = template1.Replace("XXXXpincodeXXX", user.currAddPinCode);
             template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
             template1 = template1.Replace("XXXXorderXXX", orderdata.InvoiceNo);
             template1 = template1.Replace("XXXXorderdateXXX", user.LastUpdated.ToString("dd/MM/yyyy"));
             template1 = template1.Replace("XXXXmobileXXX", user.Mobile);
-            template1 = template1.Replace("XXXXproductnameXXX", productdata.Category_Name+" " +productdata.Product_Name);
+            template1 = template1.Replace("XXXXproductnameXXX", productdata.Category_Name + " " + productdata.Product_Name);
             template1 = template1.Replace("XXXXhsncodeXXX", producttype.HSNCode);
             template1 = template1.Replace("XXXXqtyXXX", orderdata.Qty.ToString());
             template1 = template1.Replace("XXXXpurityXXX", productdata.purity.ToString());
@@ -706,7 +718,7 @@ namespace JewelleryWebApplication.Controllers
             template1 = template1.Replace("XXXcgstXXX", cgstamount.ToString());
             template1 = template1.Replace("XXXsgstXXX", sgstamount.ToString());
             template1 = template1.Replace("XXXtotaltaxXXX", totaltax.ToString());
-            template1 = template1.Replace("XXXXpincodeXXX", user.PinCode);
+            template1 = template1.Replace("XXXXpincodeXXX", user.currAddPinCode);
             template1 = template1.Replace("XXXXtotalXXX", grossTotalRate.ToString());
             template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
             template1 = template1.Replace("XXXXtotalnetwtXXX", totalnetwt.ToString());
@@ -724,12 +736,12 @@ namespace JewelleryWebApplication.Controllers
                 }
 
                 ConverterProperties converterProperties = new ConverterProperties();
-           
+
                 HtmlConverter.ConvertToPdf(htmlContent, stream, converterProperties);
 
                 pdfBytes = stream.ToArray();
             }
-        
+
             return File(pdfBytes, "application/pdf", "downloaded.pdf");
         }
 
@@ -781,11 +793,9 @@ namespace JewelleryWebApplication.Controllers
         [HttpPost("PaymentRequest")]
         public async Task<IActionResult> PaymentRequest(PaymentViewModel model)
         {
-
-
             var total = model.amount * 100;
             string uniqueId = Guid.NewGuid().ToString();
-            string orderNumber = model.orderNumber;
+            string orderNumber = model.orderId;
             int customerId = Convert.ToInt32(model.id);
             var payload = new
             {
@@ -794,7 +804,7 @@ namespace JewelleryWebApplication.Controllers
                 merchantUserId = "MUID123",
                 amount = total,
 
-                callbackUrl = $"https://www.mkgharejewellers.com",
+                callbackUrl = $"https://www.mkgharejewellers.com/paymentfailedpage?orderId={orderNumber}&custId={customerId}",
                 redirectUrl = $"https://www.mkgharejewellers.com/paymentsuccesspage?orderId={orderNumber}&custId={customerId}",
                 mobileNumber = model.mobile,
                 paymentInstrument = new
@@ -923,7 +933,7 @@ namespace JewelleryWebApplication.Controllers
 
             if (ModelState.IsValid)
             {
-              
+
                 List<tblOrder> orders = new List<tblOrder>();
 
                 foreach (var li in orders)
@@ -938,19 +948,19 @@ namespace JewelleryWebApplication.Controllers
                     order.ReceivedAmt = li.ReceivedAmt;
                     order.OnlineStatus = "Active";
                     order.OrderStatus = li.OrderStatus;
-                    foreach (var product in order.Products)
-                    {
-                        var productdetails = _productrepository.All().Include(x => x.tblMaterialCategory).Where(x => x.Id == product.Product_id).FirstOrDefault();
-                        var puritydetails = _purityRepository.All().Where(x => x.Id == productdetails.PurityId).FirstOrDefault();
-                        order.Product_id = productdetails.Id;
-                        order.Qty = productdetails.Quantity;
-                        order.MRP = productdetails.MRP.ToString();
-                        order.Rate = puritydetails.TodaysRate;
-                        order.GrossWt = productdetails.grosswt.ToString();
-                        order.NetWt = productdetails.NetWt.ToString();
-                        order.StoneWt = productdetails.StoneWeight;
-                        order.CategoryName = productdata.Category_Name;
-                    }
+                    //foreach (var product in order.Products)
+                    //{
+                    //    var productdetails = _productrepository.All().Include(x => x.tblMaterialCategory).Where(x => x.Id == product.Product_id).FirstOrDefault();
+                    //    var puritydetails = _purityRepository.All().Where(x => x.Id == productdetails.PurityId).FirstOrDefault();
+                    //    order.Product_id = productdetails.Id;
+                    //    order.Qty = productdetails.Quantity;
+                    //    order.MRP = productdetails.MRP.ToString();
+                    //    order.Rate = puritydetails.TodaysRate;
+                    //    order.GrossWt = productdetails.grosswt.ToString();
+                    //    order.NetWt = productdetails.NetWt.ToString();
+                    //    order.StoneWt = productdetails.StoneWeight;
+                    //    order.CategoryName = productdata.Category_Name;
+                    //}
                     orders.Add(order);
                 }
                 await _ordersRepository.BulkInsertAsync(orders);
@@ -964,14 +974,13 @@ namespace JewelleryWebApplication.Controllers
         [HttpPost("BulkUpdateOrders")]
         public async Task<IActionResult> BulkUpdateOrders(List<tblOrder> list)
         {
-            
+
             if (ModelState.IsValid)
             {
                 List<tblOrder> orders = new List<tblOrder>();
                 foreach (var li in list)
                 {
-                  
-                   var orderdata = _ordersRepository.All().Where(x => x.orderNumber == li.orderNumber).FirstOrDefault();
+                    var orderdata = _ordersRepository.All().Where(x => x.orderNumber == li.orderNumber).FirstOrDefault();
                     if (orderdata != null)
                     {
                         if (li.OrderStatus == "Paid")
@@ -996,328 +1005,632 @@ namespace JewelleryWebApplication.Controllers
                         }
                     }
                 }
-               await sendEmailmultipleproduct(list);
+                //  await sendEmailmultipleproduct(list);
                 return Ok(new { Status = "Success", data = list });
-              
+
             }
 
             return BadRequest();
         }
 
-        private async Task sendEmailmultipleproduct(List<tblOrder> products)
+        [HttpPost("CreateOrder")]
+        public async Task<IActionResult> CreateOrder(tblOrder model)
         {
-            tblOrder order = new tblOrder();
-            decimal totalsaleamount=0;
+            var productdata = _productrepository.All().Include(x => x.tblMaterialCategory).Where(x => x.Id == model.Product_id).FirstOrDefault();
+            var emaildata = _customerDetailsRepository.All().Where(x => x.Id == model.Customer_Id).FirstOrDefault();
+
+            string productlabel = _materialCategoryRepository.All().Where(x => x.Id == productdata.Category_id).Select(X => X.Name).FirstOrDefault();
+
+            int count = _ordersRepository.All().Where(x => x.CategoryName.Contains(productlabel)).Count();
+            char categorycode = productlabel[0];
+            int x = count + 1;
+            Random generator = new Random();
+            int r = generator.Next(100000, 1000000);
+            var orderNumber = categorycode + r.ToString();
+
+            DateTime currentDate = DateTime.Now;
+            int startMonth = 4;
+            int currentMonth = currentDate.Month;
+            int year;
+            if (currentMonth >= startMonth)
+            {
+                year = currentDate.Year;
+            }
+            else
+            {
+                year = currentDate.Year - 1;
+            }
+            int endYear = year + 1;
+            string financialYear = $"{year}-{endYear}";
+            var invoiceno = categorycode + " " + x + "/FY" + financialYear;
+
+            tblOrder tblOrders = new tblOrder();
+            tblOrders.OrderStatus = model.OrderStatus;
+            tblOrders.DeliveryAddress = emaildata.currAddStreet + emaildata.currAddTown + emaildata.currAddState + emaildata.currAddPinCode;
+            tblOrders.orderNumber = orderNumber;
+            tblOrders.InvoiceNo = invoiceno;
+            tblOrders.CategoryName = model.CategoryName;
+            tblOrders.Customer_Id = model.Customer_Id;
+            tblOrders.GovtTax = model.GovtTax;
+            tblOrders.Offer = model.Offer;
+            tblOrders.PaymentMode = model.PaymentMode;
+           // tblOrders.Price = model.Price;
+            tblOrders.Qty = model.Qty;
+            tblOrders.OnlineStatus = "Active";
+           // tblOrders.Product_id = model.Product_id;
+            tblOrders.ReceivedAmt = model.ReceivedAmt;
+
+            await _ordersRepository.InsertAsync(tblOrders);
+
+            return Ok(new { status = "Success", data = tblOrders });
+        }
+        [HttpPost("CreateOrderItem")]
+        public async Task<IActionResult> CreateOrderItem(List<OrderItemDetails> orderitem)
+        {
+            List<OrderItemDetails> itemDetails = new List<OrderItemDetails>();
+            foreach (var list in orderitem)
+            {
+                var orders = _ordersRepository.All().Where(x => x.Id == list.OrderId).FirstOrDefault();
+                var products = _productrepository.All().Where(x => x.Id == list.ProductId).FirstOrDefault();
+                var purities = _purityRepository.All().Where(x => x.Id == products.PurityId).FirstOrDefault();
+                var producttype = _productTypeRepository.All().Where(x => x.Id == products.ProductTypeId).FirstOrDefault();
+                OrderItemDetails orderItem = new OrderItemDetails();
+                orderItem.OrderId = list.OrderId;
+                orderItem.OrderNumber = orders.orderNumber;
+                orderItem.ProductId = list.ProductId;
+                orderItem.MRP = list.MRP;
+                orderItem.Customer_Id = orders.Customer_Id;
+                orderItem.CategoryName = products.Category_Name;
+              //  orderItem.OrderStatus = list.OrderStatus;
+                orderItem.ProductName = list.ProductName;
+                orderItem.Quantity = list.Quantity;
+                orderItem.HSNCode = producttype.HSNCode;
+                orderItem.ItemCode = products.ItemCode;
+                orderItem.grosswt = list.grosswt;
+                orderItem.NetWt = list.NetWt;
+                orderItem.StoneWeight = list.StoneWeight;
+                orderItem.StoneAmount = list.StoneAmount;
+                orderItem.Purity = purities.Purity;
+                orderItem.makingchrg = list.makingchrg;
+                orderItem.Rate = list.Rate;
+                itemDetails.Add(orderItem);
+
+            }
+            await _ordersItemDetailsRepository.BulkInsertAsync(itemDetails);
+            return Ok(new { status = "Success", data = itemDetails });
+
+        }
+
+        [HttpPost("DownloadInvoice")]
+        public async Task<IActionResult> DownloadInvoice(tblOrder model)
+        {
+            var orderdata = _ordersRepository.All().Where(x => x.Id == model.Id).FirstOrDefault();
+            var orderitem = _ordersItemDetailsRepository.All().Where(x => x.OrderNumber == orderdata.orderNumber).ToList();
+
+
+            var user = _customerDetailsRepository.All().Where(x => x.Id == orderdata.Customer_Id).FirstOrDefault();
+            var productdata = _productrepository.All().Where(x => x.Id == orderdata.Product_id).FirstOrDefault();
+      
+            var producttype = _productTypeRepository.All().Where(x => x.Id == productdata.ProductTypeId).FirstOrDefault();
+            var categorylabel = _materialCategoryRepository.All().Where(x => x.Id == productdata.Category_id).Select(x => x.Label).FirstOrDefault();
+            var itemcode = "";
+            var productListHtml = "";
+            var Quantity = "";
+            var puritydata1 = "";
+            var grosswt = "";
+            var StoneWeight = "";
+            var NetWt = "";
+            var makingcharg = "";
+            var Rate = "";
+            var Total = "";
+            decimal totalgrwt = 0;
+            decimal totalnetwt = 0;
+            decimal totalstwt = 0;
+            decimal totalsaleamount =0 ;
             decimal netamount=0;
             decimal cgstamount=0;
-            decimal totalstwt=0;
-            decimal totalnetwt=0;
+            // decimal totalstwt;
+            //decimal totalnetwt;
             decimal totaltax=0;
-            decimal sgstamount=0;
-            decimal Making_Percentage=0;
-            decimal Making_per_gram=0;
-            decimal Making_Fixed_Amt=0;
-            decimal totalgrwt=0;
+            decimal sgstamount = 0;
+            decimal Making_Percentage;
+            decimal Making_per_gram;
+            decimal Making_Fixed_Amt;
+            //  decimal totalgrwt;
             decimal grossTotalRate;
-            decimal makingchrg=0;
-            decimal MRP=0;
+            decimal makingchrg;
+            decimal MRP;
+            decimal total;
+            var cgst = 1.5;
+            var sgst = 1.5;
           
-                var orderdata = _ordersRepository.All().Where(x => x.Id == products[0].Id).FirstOrDefault();
-                var user = _customerDetailsRepository.All().Where(x => x.Id == orderdata.Customer_Id).FirstOrDefault();
-                
-                foreach (var product in order.Products)
+            //totaltax = cgstamount + sgstamount;
+            //netamount = totalsaleamount+totaltax;
+
+         
+           
+            //var data = "";
+            //var imagePath = productdata.Images.Split(',');
+            //data = "https://jewellerywebapplications.blob.core.windows.net/images/" + imagePath[0];
+            //string connectionString = "DefaultEndpointsProtocol=https;AccountName=jewellerywebapplications;AccountKey=ZaTHTvbGMADLIQLKM4ujTLLDwoCMDRGIIfeVBdjPN+taeuEmhqXV51R1IoCdFgOwdMRQRaZ7Axgr+AStBPFF2g==;EndpointSuffix=core.windows.net";
+            //string containerName = "template";
+            //string blobName = "Invoice.html";
+
+
+            //BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
+            //BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+            //BlobClient blobClient = containerClient.GetBlobClient(blobName);
+
+            //Response<BlobDownloadInfo> downloadResponse = await blobClient.DownloadAsync();
+            //  var template1 = await new StreamReader(downloadResponse.Value.Content).ReadToEndAsync();
+            //var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+            var viewPath1 = System.IO.Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+            var template1 = System.IO.File.ReadAllText(viewPath1);
+
+            foreach (var item in orderitem)
+            {
+                if (item.MRP != null && item.MRP != "")
                 {
-                var productdata = _productrepository.All().Where(x => x.Id == product.Product_id).FirstOrDefault();
-                var puritydata = _purityRepository.All().Where(x => x.Id == productdata.PurityId).FirstOrDefault();
-                var categorylabel = _materialCategoryRepository.All().Where(x => x.Id == productdata.Category_id).Select(x => x.Label).FirstOrDefault();
-                // Perform calculations for each product
-                decimal productAmount = productdata.MRP * orderdata.Qty;
-                if (productdata.MRP != 0)
-                {
-                    var cgst = 1.5;
-                    var sgst = 1.5;
-                    MRP = Convert.ToDecimal(productdata.MRP) ;
-                    cgstamount = (Convert.ToDecimal(cgst) * MRP) / 100;
-                    sgstamount = (Convert.ToDecimal(sgst) * MRP) / 100;
+                    var productsdata = _productrepository.All().Where(x => x.Id == item.ProductId).FirstOrDefault();
+                    itemcode += "<p>" + item.HSNCode + "</p>";
+                    productListHtml += "<p>" + item.CategoryName + " " + item.ProductName + "</p>";
+                    Quantity += "<p>" + item.Quantity + "</p>";
+                    puritydata1 += "<p>" + item.Purity + "</p>";
+                    grosswt += "<p>" + item.grosswt + "</p>";
+                    StoneWeight += "<p>" + item.StoneWeight + "</p>";
+                    NetWt += "<p>" + item.NetWt + "</p>";
+                    makingcharg += "<p>" + item.makingchrg + "</p>";
+                    Rate += "<p>" + item.Rate + "</p>";
+                    Total += "<p>" + Convert.ToDecimal(item.MRP) * Convert.ToDecimal(item.Quantity) + "</p>";
+                    totalnetwt = totalnetwt + Convert.ToDecimal(item.NetWt);
+                    if (item.StoneWeight != null && item.StoneWeight != "")
+                    {
+                        totalstwt = totalstwt + Convert.ToDecimal(item.StoneWeight);
+                    }
+
+                    else
+                    {
+                        totalstwt = totalstwt + 0;
+                    }
+                    totalgrwt = totalgrwt + Convert.ToDecimal(item.grosswt);
+                    totalsaleamount = totalsaleamount + (Convert.ToDecimal(item.MRP) * Convert.ToDecimal(item.Quantity));
+                    cgstamount = (Convert.ToDecimal(cgst) * totalsaleamount) / 100;
+                    sgstamount = (Convert.ToDecimal(sgst) * totalsaleamount) / 100;
                     totaltax = cgstamount + sgstamount;
-                    totalsaleamount = MRP * orderdata.Qty;
-                    totalnetwt = productdata.NetWt;
-                    var finalPrice = MRP + totaltax;
-                    grossTotalRate = totalsaleamount;
-                    netamount = finalPrice;
-                    totalgrwt = productdata.grosswt * orderdata.Qty;
-                    totalstwt = Convert.ToDecimal(productdata.StoneWeight) * orderdata.Qty;
-                    Making_Percentage = 0;
-                    Making_per_gram = 0;
-                    Making_Fixed_Amt = 0;
-                    makingchrg = 0;
-                    cgstamount += cgstamount;
-                    MRP += MRP;
-                    totaltax += totaltax;
-
-
-                    var data = "";
-                    var imagePath = productdata.Images.Split(',');
-                    data = "https://jewellerywebapplications.blob.core.windows.net/images/" + imagePath[0];
-
-                    if (orderdata.OrderStatus == "Paid")
-                    {
-
-                        var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderConfirmation.html");
-                        var template = System.IO.File.ReadAllText(viewPath);
-                            template = template.Replace("XXXXquantityXXX", orderdata.Qty.ToString());
-                            template = template.Replace("XXXXsizeXXX", productdata.Size);
-                            template = template.Replace("XXXXimagesXXX", data);
-                            template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
-                            template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
-                            //  template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
-                            template = template.Replace("XXXnetamtXXX", netamount.ToString());
-                        
-                        template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
-                        template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                        template = template.Replace("XXXXcuraddressXXX", user.PerAdd);
-                        template = template.Replace("XXXXemailXXX", user.Email);
-                        template = template.Replace("XXXXpincodeXXX", user.PinCode);
-
-                        template = template.Replace("XXXXorderXXX", orderdata.InvoiceNo);
-                        template = template.Replace("XXXXorderdateXXX", orderdata.CreatedOn.ToString("dd/MM/yyyy"));
-                        template = template.Replace("XXXXmobileXXX", user.Mobile);
-
-                        template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
-                        template = template.Replace("XXXpriceXXX", MRP.ToString());
-                        template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
-                        await _emailSender.SendEmailAsync(user.Email, "Order Confirmation", $"" + template + "");
-                    }
-                    else if (orderdata.OrderStatus == "Delivered")
-                    {
-                        string connectionString = "DefaultEndpointsProtocol=https;AccountName=jewellerywebapplications;AccountKey=ZaTHTvbGMADLIQLKM4ujTLLDwoCMDRGIIfeVBdjPN+taeuEmhqXV51R1IoCdFgOwdMRQRaZ7Axgr+AStBPFF2g==;EndpointSuffix=core.windows.net";
-                        string containerName = "template";
-                        string blobName = "Invoice.html";
-
-
-                        BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
-                        BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);
-                        BlobClient blobClient = containerClient.GetBlobClient(blobName);
-
-                        Response<BlobDownloadInfo> downloadResponse = await blobClient.DownloadAsync();
-                        var template1 = await new StreamReader(downloadResponse.Value.Content).ReadToEndAsync();
-                        var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "OrderDelivered.html");
-                        //  var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
-                        var template = System.IO.File.ReadAllText(viewPath);
-                        //var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
-                        //  var viewPath1 = "https://jewellerywebapplications.blob.core.windows.net/template/Invoice.html";
-                        //   var template1 = System.IO.File.ReadAllText(viewPath1);
-                        //    var template1 = System.IO.File.ReadAllText(viewPath1);
-                        //  template = template.Replace("XXXABCXXX", Message);
-                        template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
-                        template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                        template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
-                        template = template.Replace("XXXXemailXXX", user.Email);
-                        template = template.Replace("XXXXpincodeXXX", user.PinCode);
-                        template = template.Replace("XXXXquantityXXX", productdata.Quantity.ToString());
-                        template = template.Replace("XXXXsizeXXX", productdata.Size);
-                        template = template.Replace("XXXXimagesXXX", data);
-                        template = template.Replace("XXXXorderXXX", orderdata.InvoiceNo.ToString());
-                        template = template.Replace("XXXXorderdateXXX", orderdata.CreatedOn.ToString("dd/MM/yyyy"));
-                        template = template.Replace("XXXXmobileXXX", user.Mobile);
-                        template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
-                        template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
-                        template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
-                        template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
-                        template = template.Replace("XXXordervalueXXX", orderdata.ReceivedAmt.ToString());
-                        template = template.Replace("XXXpriceXXX", MRP.ToString());
-                        template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
-                        template = template.Replace("XXXnetamtXXX", netamount.ToString());
-                        template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                        template1 = template1.Replace("XXXXcuraddressXXX", user.CurrAdd);
-                        template1 = template1.Replace("XXXXemailXXX", user.Email);
-                        template1 = template1.Replace("XXXXpincodeXXX", user.PinCode);
-                        //  template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                        template1 = template1.Replace("XXXXorderXXX", orderdata.InvoiceNo);
-                        template1 = template1.Replace("XXXXorderdateXXX", orderdata.CreatedOn.ToString("dd/MM/yyyy"));
-                        template1 = template1.Replace("XXXXmobileXXX", user.Mobile);
-                        template1 = template1.Replace("XXXXproductnameXXX", categorylabel + " " + productdata.Product_Name);
-                        template1 = template1.Replace("XXXXhsncodeXXX", productdata.hsn_code);
-                        template1 = template1.Replace("XXXXqtyXXX", orderdata.Qty.ToString());
-                        template1 = template1.Replace("XXXXpurityXXX", productdata.purity.ToString());
-                        template1 = template1.Replace("XXXXgrwtXXX", productdata.grosswt.ToString());
-                        template1 = template1.Replace("XXXXstonewtXXX", productdata.StoneWeight.ToString());
-                        template1 = template1.Replace("XXXXnetwtXXX", productdata.NetWt.ToString());
-                        template1 = template1.Replace("XXXXmkpercXXX", makingchrg.ToString());
-                        template1 = template1.Replace("XXXXsizeXXX", productdata.Size);
-                        template1 = template1.Replace("XXXXrateXXX", puritydata.TodaysRate);
-                        template1 = template1.Replace("XXXXtotalamountXXX", totalsaleamount.ToString());
-                        template1 = template1.Replace("XXXXvalueXXX", user.OrderValue);
-                        template1 = template1.Replace("XXXStatusXXX", user.OrderStatus);
-                        template1 = template1.Replace("XXXnetamtXXX", netamount.ToString());
-                        template1 = template1.Replace("XXXcgstXXX", cgstamount.ToString());
-                        template1 = template1.Replace("XXXsgstXXX", sgstamount.ToString());
-                        template1 = template1.Replace("XXXtotaltaxXXX", totaltax.ToString());
-                        template1 = template1.Replace("XXXXpincodeXXX", user.PinCode);
-                        template1 = template1.Replace("XXXXtotalXXX", grossTotalRate.ToString());
-                        template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
-                        template1 = template1.Replace("XXXXtotalnetwtXXX", totalnetwt.ToString());
-                        template1 = template1.Replace("XXXXtotalgrwtXXX", totalgrwt.ToString());
-                        template1 = template1.Replace("XXXXtotalstwtXXX", totalstwt.ToString());
-                        //template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
-                        //try
-                        //{
-                        byte[] pdfBytes;
-                        var htmlContent = template1;
-                        using (MemoryStream stream = new MemoryStream())
-                        {
-                            if (string.IsNullOrEmpty(htmlContent))
-                            {
-                                throw new Exception("HTML content is null or empty.");
-                            }
-
-                            ConverterProperties converterProperties = new ConverterProperties();
-                            HtmlConverter.ConvertToPdf(htmlContent, stream, converterProperties);
-
-                            pdfBytes = stream.ToArray();
-                        }
-                        var subject = "order delivered";
-                        var client = new SmtpClient(_emailSettings.MailServer)
-                        {
-                            UseDefaultCredentials = false,
-                            Credentials = new NetworkCredential(_emailSettings.Sender, _emailSettings.Password),
-                            Port = _emailSettings.MailPort,
-                            EnableSsl = _emailSettings.SSL
-                        };
-                        var mailMessage = new MailMessage
-                        {
-                            From = new MailAddress("info@mkgharejewellers.com")
-                        };
-                        var attachment = new Attachment(new MemoryStream(pdfBytes), "Invoice.pdf", "application/pdf");
-                        mailMessage.Attachments.Add(attachment);
-                        mailMessage.To.Add(user.Email);
-                        mailMessage.Subject = subject;
-                        mailMessage.Body = template;
-                        mailMessage.IsBodyHtml = true;
-
-                        await client.SendMailAsync(mailMessage);
-                        // Email sent successfully
-                        //}
-                        //catch (Exception ex)
-                        //{
-
-                        //    return ex.Message;
-                        //}
-
-                    }
-                    else if (orderdata.OrderStatus == "Payment Failed")
-                    {
-                        var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "PaymentFailed.html");
-                        //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
-                        var template = System.IO.File.ReadAllText(viewPath);
-
-
-                        //    var template1 = System.IO.File.ReadAllText(viewPath1);
-                        //  template = template.Replace("XXXABCXXX", Message);
-
-                        template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                        template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
-                        template = template.Replace("XXXXemailXXX", user.Email);
-                        template = template.Replace("XXXXpincodeXXX", user.PinCode);
-                        template = template.Replace("XXXXqtyXXX", orderdata.Qty.ToString());
-                        template = template.Replace("XXXXsizeXXX", productdata.Size);
-                        template = template.Replace("XXXXimagesXXX", data);
-                        template = template.Replace("XXXXorderXXX", orderdata.InvoiceNo.ToString());
-                        template = template.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
-                        template = template.Replace("XXXXmobileXXX", user.Mobile);
-                        template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
-                        template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
-                        template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
-                        template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
-                        template = template.Replace("XXXordervalueXXX", orderdata.ReceivedAmt.ToString());
-                        template = template.Replace("XXXpriceXXX", MRP.ToString());
-
-                        await _emailSender.SendEmailAsync(user.Email, "Payment Failure - Order #" + orderdata.Id + "", $"" + template + "");
-                    }
-                    else if (orderdata.OrderStatus == "Order Placed")
-                    {
-                        var viewPath = Path.Combine(_environment.WebRootPath + "/Templates", "orderOnTheWay.html");
-                        //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
-                        var template = System.IO.File.ReadAllText(viewPath);
-
-
-                        //    var template1 = System.IO.File.ReadAllText(viewPath1);
-                        //  template = template.Replace("XXXABCXXX", Message);
-
-                        template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
-                        template = template.Replace("XXXXcuraddressXXX", user.CurrAdd);
-                        template = template.Replace("XXXXemailXXX", user.Email);
-                        template = template.Replace("XXXXpincodeXXX", user.PinCode);
-                        template = template.Replace("XXXXquantityXXX", productdata.Quantity.ToString());
-                        template = template.Replace("XXXXsizeXXX", productdata.Size);
-                        template = template.Replace("XXXXimagesXXX", data);
-                        template = template.Replace("XXXXorderXXX", orderdata.InvoiceNo.ToString());
-                        template = template.Replace("XXXXorderdateXXX", orderdata.CreatedOn.ToString("dd/MM/yyyy"));
-                        template = template.Replace("XXXXmobileXXX", user.Mobile);
-                        template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
-                        template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
-                        template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
-                        template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
-                        template = template.Replace("XXXordervalueXXX", orderdata.ReceivedAmt.ToString());
-                        template = template.Replace("XXXXtotalamountXXX", totalsaleamount.ToString());
-                        template = template.Replace("XXXXqtyXXX", orderdata.Qty.ToString());
-                        template = template.Replace("XXXpriceXXX", MRP.ToString());
-                        template = template.Replace("XXXnetamtXXX", netamount.ToString());
-                        await _emailSender.SendEmailAsync(user.Email, "Your Order Has Been Shipped!", $"" + template + "");
-                    }
+                    netamount = totalsaleamount + totaltax;
                 }
                 else
                 {
-                    var netGoldRate = (Convert.ToDecimal(productdata.NetWt) * Convert.ToDecimal(puritydata.TodaysRate)) / 10;
-                    var makingCharges1 = Convert.ToDecimal(productdata.NetWt) * Convert.ToDecimal(productdata.Making_per_gram);
-                    var makingCharges2 = (netGoldRate * Convert.ToDecimal(productdata.Making_Percentage)) / 100;
-                    var makingCharges3 = Convert.ToDecimal(productdata.Making_Fixed_Amt);
-                    var makingCharges4 = (Convert.ToDecimal(puritydata.TodaysRate) * Convert.ToDecimal(productdata.Making_Fixed_Wastage)) / 10;
+                    var productsdata = _productrepository.All().Where(x => x.Id == item.ProductId).FirstOrDefault();
+                    var purities = _purityRepository.All().Where(x => x.Id == productsdata.PurityId).FirstOrDefault();
+                    var netGoldRate = (Convert.ToDecimal(productsdata.NetWt) * Convert.ToDecimal(item.Rate)) / 10;
+                    var makingCharges1 = Convert.ToDecimal(item.NetWt) * Convert.ToDecimal(productsdata.Making_per_gram);
+                    var makingCharges2 = (netGoldRate * Convert.ToDecimal(productsdata.Making_Percentage)) / 100;
+                    var makingCharges3 = Convert.ToDecimal(productsdata.Making_Fixed_Amt);
+                    var makingCharges4 = (Convert.ToDecimal(purities.TodaysRate) * Convert.ToDecimal(productsdata.Making_Fixed_Wastage)) / 10;
                     makingchrg = makingCharges1 + makingCharges2 + makingCharges3 + makingCharges4;
-                    var GST = 0.03;
-                    grossTotalRate = 1;
-                    grossTotalRate = netGoldRate + makingCharges1 + makingCharges2 + makingCharges3 + makingCharges4 + Convert.ToDecimal(productdata.StoneAmount);
-                    var GSTAdded = Convert.ToDecimal(GST) * grossTotalRate;
-                    var finalPrice = grossTotalRate + GSTAdded;
+                   
+                    Total = (netGoldRate + makingCharges1 + makingCharges2 + makingCharges3 + makingCharges4 + Convert.ToDecimal(item.StoneAmount)).ToString();
 
-                    //var productprice = (Convert.ToInt32(puritydata.TodaysRate) / 10) * productdata.NetWt;
-                    //var makingperc = productprice * Convert.ToInt32(productdata.Making_Percentage) / 100;
-                    //var total = productprice + makingperc;
-                    var cgst = 1.5;
-                    var sgst = 1.5;
-                    // var igst = 3;
-                    totalsaleamount = Convert.ToDecimal(grossTotalRate * orderdata.Qty);
-                    cgstamount = Convert.ToDecimal(cgst) * totalsaleamount / 100;
-                    sgstamount = Convert.ToDecimal(sgst) * totalsaleamount / 100;
-                    // var igstamount = Convert.ToDecimal(igst) * totalsaleamount / 100;
-                    totalnetwt = productdata.NetWt * orderdata.Qty;
-                    totalgrwt = productdata.grosswt * orderdata.Qty;
-                    totalstwt = Convert.ToDecimal(productdata.StoneWeight) * (Convert.ToDecimal(orderdata.Qty));
-
+                    totalsaleamount = totalsaleamount + Convert.ToDecimal(Total);
+                    cgstamount = (Convert.ToDecimal(cgst) * totalsaleamount) / 100;
+                    sgstamount = (Convert.ToDecimal(sgst) * totalsaleamount) / 100;
                     totaltax = cgstamount + sgstamount;
-                    netamount = totalsaleamount + Convert.ToDecimal(totaltax);
-                    MRP = netamount;
+                    netamount = totalsaleamount + totaltax;
 
+                }
+            }
 
+            template1 = template1.Replace("XXXXproductnameXXX", productListHtml);
+            template1 = template1.Replace("XXXXhsncodeXXX", itemcode);
+            template1 = template1.Replace("XXXXqtyXXX", Quantity.ToString());
+            template1 = template1.Replace("XXXXpurityXXX", puritydata1.ToString());
+            template1 = template1.Replace("XXXXgrwtXXX", grosswt.ToString());
+            template1 = template1.Replace("XXXXstonewtXXX", StoneWeight.ToString());
+            template1 = template1.Replace("XXXXnetwtXXX", NetWt.ToString());
+            template1 = template1.Replace("XXXXmkpercXXX", makingcharg.ToString());
+            //     template1 = template1.Replace("XXXXsizeXXX", productsdata.Size);
+            template1 = template1.Replace("XXXXrateXXX", Rate);
 
+            template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+            template1 = template1.Replace("XXXXcuraddressXXX", user.currAddStreet + " " + user.currAddTown + " " + user.currAddState);
+            template1 = template1.Replace("XXXXemailXXX", user.Email);
+            template1 = template1.Replace("XXXXpincodeXXX", user.currAddPinCode);
+            //   template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+            template1 = template1.Replace("XXXXorderXXX", orderdata.InvoiceNo);
+            template1 = template1.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
+            template1 = template1.Replace("XXXXmobileXXX", user.Mobile);
 
+            template1 = template1.Replace("XXXXtotalamountXXX", totalsaleamount.ToString());
+            //template1 = template1.Replace("XXXXvalueXXX", user.OrderValue);
+            //template1 = template1.Replace("XXXStatusXXX", user.OrderStatus);
+            template1 = template1.Replace("XXXnetamtXXX", netamount.ToString());
+            template1 = template1.Replace("XXXcgstXXX", cgstamount.ToString());
+            template1 = template1.Replace("XXXsgstXXX", sgstamount.ToString());
+            template1 = template1.Replace("XXXtotaltaxXXX", totaltax.ToString());
+            template1 = template1.Replace("XXXXpincodeXXX", user.currAddPinCode);
+            template1 = template1.Replace("XXXXtotalXXX", Total.ToString());
+            //        template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
+            template1 = template1.Replace("XXXXtotalnetwtXXX", totalnetwt.ToString());
+            template1 = template1.Replace("XXXXtotalgrwtXXX", totalgrwt.ToString());
+            template1 = template1.Replace("XXXXtotalstwtXXX", totalstwt.ToString());
+            template1 = template1.Replace("XXXXpaymentmodeXXX", orderdata.PaymentMode.ToString());
 
+            byte[] pdfBytes;
+            var htmlContent = template1;
+            using (MemoryStream stream = new MemoryStream())
+            {
+                if (string.IsNullOrEmpty(htmlContent))
+                {
+                    throw new Exception("HTML content is null or empty.");
+                }
 
+                ConverterProperties converterProperties = new ConverterProperties();
 
+                HtmlConverter.ConvertToPdf(htmlContent, stream, converterProperties);
 
+                pdfBytes = stream.ToArray();
+            }
 
+            return File(pdfBytes, "application/pdf", "downloaded.pdf");
+        }
+
+        [HttpPost("UpdateBulkeOrders")]
+        public async Task<IActionResult> UpdatBulkeOrders(tblOrder model)
+        {
+            var orderdata = _ordersRepository.All().Where(x => x.orderNumber == model.orderNumber).FirstOrDefault();
+            if (orderdata != null)
+            {
+                if (model.OrderStatus == "Paid")
+                {
+                    orderdata.OrderStatus = "Paid";
+                    await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
+                    await sendEmails(orderdata.Id);
+                    return Ok(new { Status = "Success", data = orderdata });
+                }
+
+                else if (model.OrderStatus == "Delivered")
+                {
+
+                    orderdata.OrderStatus = "Delivered";
+                    await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
+
+                    await sendEmails(orderdata.Id);
+                    return Ok(new { Status = "Success", data = orderdata });
+                }
+                else if (model.OrderStatus == "Payment Failed")
+                {
+                    orderdata.OrderStatus = "Payment Failed";
+                    await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
+                    await sendEmails(orderdata.Id);
+                    return Ok(new { Status = "Success", data = orderdata });
+                }
+                else if (model.OrderStatus == "Shipped")
+                {
+
+                    orderdata.OrderStatus = "Shipped";
+                    await _ordersRepository.UpdateAsync(orderdata, orderdata.Id);
+                    await sendEmails(orderdata.Id);
+                    return Ok(new { Status = "Success", data = orderdata });
 
                 }
 
-                // Update the order's total amount and quantity
+            }
+
+
+            return BadRequest();
+        }
+        private async Task sendEmails(int Id)
+        {
+            //string Message = "Your Order  -" + Status + "  Sucessfully";
+            var orderdata = _ordersRepository.All().Where(x => x.Id == Id).FirstOrDefault();
+            var orderitem = _ordersItemDetailsRepository.All().Where(x => x.OrderNumber == orderdata.orderNumber).ToList();
+            var user = _customerDetailsRepository.All().Where(x => x.Id == orderdata.Customer_Id).FirstOrDefault();
+            var productdata = _productrepository.All().Where(x => x.Id == orderdata.Product_id).FirstOrDefault();
+            var puritydata = _purityRepository.All().Where(x => x.Id == productdata.PurityId).FirstOrDefault();
+            var categorylabel = _materialCategoryRepository.All().Where(x => x.Id == productdata.Category_id).Select(x => x.Label).FirstOrDefault();
+            var producttype = _productTypeRepository.All().Where(x => x.Id == productdata.ProductTypeId).FirstOrDefault();
+            var itemcode = "";
+            var productListHtml = "";
+            var Quantity = "";
+            var puritydata1 = "";
+            var grosswt = "";
+            var StoneWeight = "";
+            var NetWt = "";
+            var makingcharg = "";
+            var Rate = "";
+            var Total = "";
+            decimal totalgrwt = 0;
+            decimal totalnetwt = 0;
+            decimal totalstwt = 0;
+            decimal totalsaleamount = 0;
+            decimal netamount = 0;
+            decimal cgstamount = 0;
+            // decimal totalstwt;
+            //decimal totalnetwt;
+            decimal totaltax = 0;
+            decimal sgstamount = 0;
+            decimal Making_Percentage;
+            decimal Making_per_gram;
+            decimal Making_Fixed_Amt;
+            //  decimal totalgrwt;
+            decimal grossTotalRate;
+            decimal makingchrg;
+            decimal MRP;
+            decimal total;
+            var cgst = 1.5;
+            var sgst = 1.5;
+            var data = "";
+            foreach (var item in orderitem)
+            {
+                if (item.MRP != null && item.MRP != "")
+                {
+                    var imagePath = productdata.Images.Split(',');
+                    data = "https://jewellerywebapplications.blob.core.windows.net/images/" + imagePath[0];
+                    var productsdata = _productrepository.All().Where(x => x.Id == item.ProductId).FirstOrDefault();
+                    itemcode += "<p>" + item.HSNCode + "</p>";
+                    productListHtml += "<p>" + item.CategoryName + " " + item.ProductName + "</p>";
+                    Quantity += "<p>" + item.Quantity + "</p>";
+                    puritydata1 += "<p>" + item.Purity + "</p>";
+                    grosswt += "<p>" + item.grosswt + "</p>";
+                    StoneWeight += "<p>" + item.StoneWeight + "</p>";
+                    NetWt += "<p>" + item.NetWt + "</p>";
+                    makingcharg += "<p>" + item.makingchrg + "</p>";
+                    Rate += "<p>" + item.Rate + "</p>";
+                    Total += "<p>" + Convert.ToDecimal(item.MRP) * Convert.ToDecimal(item.Quantity) + "</p>";
+                    totalnetwt = totalnetwt + Convert.ToDecimal(item.NetWt);
+                    if (item.StoneWeight != null && item.StoneWeight != "")
+                    {
+                        totalstwt = totalstwt + Convert.ToDecimal(item.StoneWeight);
+                    }
+
+                    else
+                    {
+                        totalstwt = totalstwt + 0;
+                    }
+                    totalgrwt = totalgrwt + Convert.ToDecimal(item.grosswt);
+                    totalsaleamount = totalsaleamount + (Convert.ToDecimal(item.MRP) * Convert.ToDecimal(item.Quantity));
+                    cgstamount = (Convert.ToDecimal(cgst) * totalsaleamount) / 100;
+                    sgstamount = (Convert.ToDecimal(sgst) * totalsaleamount) / 100;
+                    totaltax = cgstamount + sgstamount;
+                    netamount = totalsaleamount + totaltax;
+                }
+                else
+                {
+                    var imagePath = productdata.Images.Split(',');
+                    data = "https://jewellerywebapplications.blob.core.windows.net/images/" + imagePath[0];
+                    var productsdata = _productrepository.All().Where(x => x.Id == item.ProductId).FirstOrDefault();
+                    var purities = _purityRepository.All().Where(x => x.Id == productsdata.PurityId).FirstOrDefault();
+                    var netGoldRate = (Convert.ToDecimal(productsdata.NetWt) * Convert.ToDecimal(item.Rate)) / 10;
+                    var makingCharges1 = Convert.ToDecimal(item.NetWt) * Convert.ToDecimal(productsdata.Making_per_gram);
+                    var makingCharges2 = (netGoldRate * Convert.ToDecimal(productsdata.Making_Percentage)) / 100;
+                    var makingCharges3 = Convert.ToDecimal(productsdata.Making_Fixed_Amt);
+                    var makingCharges4 = (Convert.ToDecimal(purities.TodaysRate) * Convert.ToDecimal(productsdata.Making_Fixed_Wastage)) / 10;
+                    makingchrg = makingCharges1 + makingCharges2 + makingCharges3 + makingCharges4;
+
+                    Total = (netGoldRate + makingCharges1 + makingCharges2 + makingCharges3 + makingCharges4 + Convert.ToDecimal(productsdata.StoneAmount)).ToString();
+
+                    totalsaleamount = totalsaleamount + Convert.ToDecimal(Total);
+                    cgstamount = (Convert.ToDecimal(cgst) * totalsaleamount) / 100;
+                    sgstamount = (Convert.ToDecimal(sgst) * totalsaleamount) / 100;
+                    totaltax = cgstamount + sgstamount;
+                    netamount = totalsaleamount + totaltax;
+
+                }
+            }
+         
+           
+
+            if (orderdata.OrderStatus == "Paid")
+            {
+                var viewPath = System.IO.Path.Combine(_environment.WebRootPath + "/Templates", "OrderConfirmation.html");
+                var template = System.IO.File.ReadAllText(viewPath);
+
+                template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
+                template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template = template.Replace("XXXXcuraddressXXX", user.currAddStreet + " " + user.currAddTown + " " + user.currAddState + " " + user.currAddPinCode);
+                template = template.Replace("XXXXemailXXX", user.Email);
+                template = template.Replace("XXXXpincodeXXX", user.currAddPinCode);
+                template = template.Replace("XXXXquantityXXX", orderdata.Qty.ToString());
+                template = template.Replace("XXXXsizeXXX", productdata.Size);
+                template = template.Replace("XXXXimagesXXX", data);
+                template = template.Replace("XXXXorderXXX", orderdata.InvoiceNo);
+                template = template.Replace("XXXXorderdateXXX", orderdata.CreatedOn.ToString("dd/MM/yyyy"));
+                template = template.Replace("XXXXmobileXXX", user.Mobile);
+                template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
+                template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
+                //  template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
+                template = template.Replace("XXXnetamtXXX", netamount.ToString());
+                template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
+                template = template.Replace("XXXpriceXXX", Total.ToString());
+                template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
+                await _emailSender.SendEmailAsync(user.Email, "Order Confirmation", $"" + template + "");
+            }
+            else if (orderdata.OrderStatus == "Delivered")
+            {
+                string connectionString = "DefaultEndpointsProtocol=https;AccountName=jewellerywebapplications;AccountKey=ZaTHTvbGMADLIQLKM4ujTLLDwoCMDRGIIfeVBdjPN+taeuEmhqXV51R1IoCdFgOwdMRQRaZ7Axgr+AStBPFF2g==;EndpointSuffix=core.windows.net";
+                string containerName = "template";
+                string blobName = "Invoice.html";
+
+
+                BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
+                BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+                BlobClient blobClient = containerClient.GetBlobClient(blobName);
+
+                Response<BlobDownloadInfo> downloadResponse = await blobClient.DownloadAsync();
+                var template1 = await new StreamReader(downloadResponse.Value.Content).ReadToEndAsync();
+                var viewPath = System.IO.Path.Combine(_environment.WebRootPath + "/Templates", "OrderDelivered.html");
+                //  var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+                var template = System.IO.File.ReadAllText(viewPath);
+                //var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+                //  var viewPath1 = "https://jewellerywebapplications.blob.core.windows.net/template/Invoice.html";
+                //   var template1 = System.IO.File.ReadAllText(viewPath1);
+                //    var template1 = System.IO.File.ReadAllText(viewPath1);
+                //  template = template.Replace("XXXABCXXX", Message);
+                template = template.Replace("XXXCallUrlXXX", "<p style=\"color:#ffffff\">For queries contact us</p>");
+                template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template = template.Replace("XXXXcuraddressXXX", user.currAddStreet + " " + user.currAddTown + " " + user.currAddPinCode);
+                template = template.Replace("XXXXemailXXX", user.Email);
+                template = template.Replace("XXXXpincodeXXX", user.currAddPinCode);
+                template = template.Replace("XXXXquantityXXX", productdata.Quantity.ToString());
+                template = template.Replace("XXXXsizeXXX", productdata.Size);
+                template = template.Replace("XXXXimagesXXX", data);
+                template = template.Replace("XXXXorderXXX", orderdata.InvoiceNo.ToString());
+                template = template.Replace("XXXXorderdateXXX", orderdata.CreatedOn.ToString("dd/MM/yyyy"));
+                template = template.Replace("XXXXmobileXXX", user.Mobile);
+                template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
+                template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
+                template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
+                template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
+                template = template.Replace("XXXordervalueXXX", orderdata.ReceivedAmt.ToString());
+                template = template.Replace("XXXpriceXXX", Total.ToString());
+                template = template.Replace("XXXqtyXXX", orderdata.Qty.ToString());
+                template = template.Replace("XXXnetamtXXX", netamount.ToString());
+                template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template1 = template1.Replace("XXXXproductnameXXX", productListHtml);
+                template1 = template1.Replace("XXXXhsncodeXXX", itemcode);
+                template1 = template1.Replace("XXXXqtyXXX", Quantity.ToString());
+                template1 = template1.Replace("XXXXpurityXXX", puritydata1.ToString());
+                template1 = template1.Replace("XXXXgrwtXXX", grosswt.ToString());
+                template1 = template1.Replace("XXXXstonewtXXX", StoneWeight.ToString());
+                template1 = template1.Replace("XXXXnetwtXXX", NetWt.ToString());
+                template1 = template1.Replace("XXXXmkpercXXX", makingcharg.ToString());
+                //     template1 = template1.Replace("XXXXsizeXXX", productsdata.Size);
+                template1 = template1.Replace("XXXXrateXXX", Rate);
+
+                template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template1 = template1.Replace("XXXXcuraddressXXX", user.currAddStreet + " " + user.currAddTown + " " + user.currAddState);
+                template1 = template1.Replace("XXXXemailXXX", user.Email);
+                template1 = template1.Replace("XXXXpincodeXXX", user.currAddPinCode);
+                //   template1 = template1.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template1 = template1.Replace("XXXXorderXXX", orderdata.InvoiceNo);
+                template1 = template1.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
+                template1 = template1.Replace("XXXXmobileXXX", user.Mobile);
+
+                template1 = template1.Replace("XXXXtotalamountXXX", totalsaleamount.ToString());
+                //template1 = template1.Replace("XXXXvalueXXX", user.OrderValue);
+                //template1 = template1.Replace("XXXStatusXXX", user.OrderStatus);
+                template1 = template1.Replace("XXXnetamtXXX", netamount.ToString());
+                template1 = template1.Replace("XXXcgstXXX", cgstamount.ToString());
+                template1 = template1.Replace("XXXsgstXXX", sgstamount.ToString());
+                template1 = template1.Replace("XXXtotaltaxXXX", totaltax.ToString());
+                template1 = template1.Replace("XXXXpincodeXXX", user.currAddPinCode);
+                template1 = template1.Replace("XXXXtotalXXX", Total.ToString());
+                //        template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
+                template1 = template1.Replace("XXXXtotalnetwtXXX", totalnetwt.ToString());
+                template1 = template1.Replace("XXXXtotalgrwtXXX", totalgrwt.ToString());
+                template1 = template1.Replace("XXXXtotalstwtXXX", totalstwt.ToString());
+                template1 = template1.Replace("XXXXpaymentmodeXXX", orderdata.PaymentMode.ToString());
+                //template1 = template1.Replace("XXXXinvoiceXXX", orderdata.Id.ToString());
+                //try
+                //{
+                byte[] pdfBytes;
+                var htmlContent = template1;
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    if (string.IsNullOrEmpty(htmlContent))
+                    {
+                        throw new Exception("HTML content is null or empty.");
+                    }
+
+                    ConverterProperties converterProperties = new ConverterProperties();
+                    HtmlConverter.ConvertToPdf(htmlContent, stream, converterProperties);
+
+                    pdfBytes = stream.ToArray();
+                }
+                var sender = new MailAddress("info@mkgharejewellers.com", "Ghare Jewellers");
+                var subject = "Order Delivered";
+                var client = new SmtpClient(_emailSettings.MailServer)
+                {
+                    UseDefaultCredentials = false,
+                    Credentials = new NetworkCredential(_emailSettings.Sender, _emailSettings.Password),
+                    Port = _emailSettings.MailPort,
+                    EnableSsl = _emailSettings.SSL
+                };
+                var mailMessage = new MailMessage
+                {
+                    From = sender,
+                };
+
+                var attachment = new Attachment(new MemoryStream(pdfBytes), "Invoice.pdf", "application/pdf");
+                mailMessage.Attachments.Add(attachment);
+                mailMessage.To.Add(user.Email);
+                mailMessage.Subject = subject;
+                mailMessage.Body = template;
+                mailMessage.IsBodyHtml = true;
+
+                await client.SendMailAsync(mailMessage);
+                // Email sent successfully
+                //}
+                //catch (Exception ex)
+                //{
+
+                //    return ex.Message;
+                //}
 
             }
-          
-      
-        
-           
-         
+            else if (orderdata.OrderStatus == "Payment Failed")
+            {
+                var viewPath = System.IO.Path.Combine(_environment.WebRootPath + "/Templates", "PaymentFailed.html");
+                //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+                var template = System.IO.File.ReadAllText(viewPath);
+
+
+                //    var template1 = System.IO.File.ReadAllText(viewPath1);
+                //  template = template.Replace("XXXABCXXX", Message);
+
+                template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template = template.Replace("XXXXcuraddressXXX", user.currAddStreet + " " + user.currAddTown + " " + user.currAddState + " " + user.currAddPinCode);
+                template = template.Replace("XXXXemailXXX", user.Email);
+                template = template.Replace("XXXXpincodeXXX", user.currAddPinCode);
+                template = template.Replace("XXXXqtyXXX", orderdata.Qty.ToString());
+                template = template.Replace("XXXXsizeXXX", productdata.Size);
+                template = template.Replace("XXXXimagesXXX", data);
+                template = template.Replace("XXXXorderXXX", orderdata.InvoiceNo.ToString());
+                template = template.Replace("XXXXorderdateXXX", user.CreatedOn.ToString("dd/MM/yyyy"));
+                template = template.Replace("XXXXmobileXXX", user.Mobile);
+                template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
+                template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
+                template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
+                template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
+                template = template.Replace("XXXordervalueXXX", orderdata.ReceivedAmt.ToString());
+                template = template.Replace("XXXpriceXXX", Total.ToString());
+
+                await _emailSender.SendEmailAsync(user.Email, "Payment Failure - Order #" + orderdata.Id + "", $"" + template + "");
+            }
+            else if (orderdata.OrderStatus == "Shipped")
+            {
+                var viewPath = System.IO.Path.Combine(_environment.WebRootPath + "/Templates", "orderOnTheWay.html");
+                //   var viewPath1 = Path.Combine(_environment.WebRootPath + "/Templates", "Invoice.html");
+                var template = System.IO.File.ReadAllText(viewPath);
+
+
+                //    var template1 = System.IO.File.ReadAllText(viewPath1);
+                //  template = template.Replace("XXXABCXXX", Message);
+
+                template = template.Replace("XXXXNameXXX", user.FirstName + " " + user.LastName);
+                template = template.Replace("XXXXcuraddressXXX", user.currAddStreet + " " + user.currAddTown + " " + user.currAddState);
+                template = template.Replace("XXXXemailXXX", user.Email);
+                template = template.Replace("XXXXpincodeXXX", user.currAddPinCode);
+                template = template.Replace("XXXXquantityXXX", orderdata.Qty.ToString());
+                template = template.Replace("XXXXsizeXXX", productdata.Size);
+                template = template.Replace("XXXXimagesXXX", data);
+                template = template.Replace("XXXXorderXXX", orderdata.InvoiceNo.ToString());
+                template = template.Replace("XXXXorderdateXXX", orderdata.CreatedOn.ToString("dd/MM/yyyy"));
+                template = template.Replace("XXXXmobileXXX", user.Mobile);
+                template = template.Replace("XXXXproductnameXXX", productdata.Product_Name);
+                template = template.Replace("XXXXitemcodeXXX", productdata.ItemCode);
+                template = template.Replace("XXXXorderidXXX", orderdata.Id.ToString());
+                template = template.Replace("XXXStatusXXX", orderdata.OrderStatus);
+                template = template.Replace("XXXordervalueXXX", orderdata.ReceivedAmt.ToString());
+                template = template.Replace("XXXXtotalamountXXX", totalsaleamount.ToString());
+                template = template.Replace("XXXXqtyXXX", orderdata.Qty.ToString());
+                template = template.Replace("XXXpriceXXX", Total.ToString());
+                template = template.Replace("XXXnetamtXXX", netamount.ToString());
+                await _emailSender.SendEmailAsync(user.Email, "Your Order Has Been Shipped!", $"" + template + "");
+            }
         }
+
 
 
     }

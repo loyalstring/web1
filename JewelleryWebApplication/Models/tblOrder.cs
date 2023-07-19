@@ -17,7 +17,7 @@ namespace JewelleryWebApplication.Models
         public decimal Price { get; set; }
         public string PaymentMode { get; set; }
         public string OrderStatus { get; set; }
-  
+        public string DeliveryAddress { get; set; }
         public string Offer { get; set; }
  
         public int Qty { get; set; }
@@ -33,13 +33,12 @@ namespace JewelleryWebApplication.Models
         public string MRP { get; set; }
         public string CategoryName { get; set; }
         public string InvoiceNo { get; set; }
-        [NotMapped]
-        public List<Product> Products { get; set; }
-
     }
-    public class Product
+    public class tblProductlist
     {
         public int Product_id { get; set; }
-  
+        public int Qty { get; set; }
+       
+
     }
 }

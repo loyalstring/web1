@@ -266,6 +266,7 @@ namespace JewelleryWebApplication.Controllers
             }
             return BadRequest();
         }
+
         //public class FIleUploadAPI
         //{
         //    public IFormFile files { get; set; }

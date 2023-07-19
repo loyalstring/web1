@@ -29,6 +29,8 @@ namespace JewelleryWebApplication.Data
         public DbSet<tblBox> tblBox { get; set; }
         public DbSet<Party_Details> Party_Details { get; set;}
         public DbSet<tblCollection> tblCollection { get; set; }
+        public DbSet<tblProductsDetails> tblProductsDetails { get; set; }
+        public DbSet<OrderItemDetails> OrderItemDetails { get; set; }
 
     }
 }

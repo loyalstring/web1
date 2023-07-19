@@ -40,15 +40,15 @@ builder.Services.AddRazorPages();
 builder.Services.AddAuthentication()
         .AddFacebook(options =>
         {
-            options.AppId = "YOUR_FACEBOOK_APP_ID";
-            options.AppSecret = "YOUR_FACEBOOK_APP_SECRET";
+            options.AppId = "806967584353963";
+            options.AppSecret = "b3f679e858b9ed5345fb48315e6fd220";
         });
 //builder.Services.Configure<RazorpayClient>(builder.Configuration.GetSection("PaymentSettings"));
 builder.Services.AddAuthentication()
         .AddGoogle(options =>
         {
-            options.ClientId = "967239436655-921es1fvvtus467jhia1dlmv4m25ad7f.apps.googleusercontent.com";
-            options.ClientSecret = "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\r\n";
+            options.ClientId = "967239436655-u2vnmgm26o36cmltr5u33hovnv93b84l.apps.googleusercontent.com";
+            options.ClientSecret = "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";
         });
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddSingleton<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, EmailSender>();

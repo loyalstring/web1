@@ -24,7 +24,8 @@ namespace JewelleryWebApplication.Services
                 services.AddTransient<IBoxMasterRepository, BoxMasterRepository>();
                 services.AddTransient<IPartyMasterRepository, PartyMasterRepository>();
                 services.AddTransient<ICollectionRepository, CollectionRepository>();
-
+                services.AddTransient<ItblProductDetailsRepository, tblProductDetailsRepository>();
+                services.AddTransient<IOrdersItemDetailsRepository, OrdersItemDetailsRepository>();
 
             });
         }
