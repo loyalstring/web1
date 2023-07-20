@@ -4,31 +4,35 @@ namespace JewelleryWebApplication.Models
 {
     public class tblProductsDetails : BaseModel
     {
-        public String purity { get; set; }
-        public String barcodeNumber { get; set; }
-        public String itemCode { get; set; }
-        public String box { get; set; }
-        public String grossWeight { get; set; }
-        public String netWeight { get; set; }
-        public String stoneweight { get; set; }
-        public String makinggm { get; set; }
-        public String makingper { get; set; }
-        public String fixedamount { get; set; }
-        public String fixedwastage { get; set; }
-        public String stoneamount { get; set; }
-        public String mrp { get; set; }
-        public String huidcode { get; set; }
-        public String partycode { get; set; }
-        public String DiamondWeight { get; set;}
-        public String DiamondPeaces { get; set; }
-        public String DiamondRate { get; set; }
-        public String DiamondAmount { get; set; }
-        public String Colour { get; set; }
-        public String Clarity { get; set; }
-        public String SettingType { get; set;}
-        public String Shape { get; set; }
-        public String DiamondSize { get; set; }
-        public string Certificate { get; set; }
+        public string createdDate { get; set; }
+        public string createdBy { get; set; }
+        public string tidValue { get; set; }
+        public string epcValue { get; set; }
+        public string category { get; set; }
+        public string product { get; set; }
+        public string purity { get; set; }
+        public string barcodeNumber { get; set; }
+        public string itemCode { get; set; }
+        public string box { get; set; }
+        public double grossWeight { get; set; }
+        public double netWeight { get; set; }
+        public double stoneweight { get; set; }
+        public string makinggm { get; set; }
+        public string makingper { get; set; }
+        public string fixedamount { get; set; }
+        public string fixedwastage { get; set; }
+        public string stoneamount { get; set; }
+        public string mrp { get; set; }
+        public string hudicode { get; set; }
+        public string partycode { get; set; }
+
+        public string updatedDate { get; set; }
+        public string updatedBy { get; set; }
+
+        public string tagstate { get; set; }
+        public string tagtransaction { get; set; }
+
+        public string status { get; set; }
 
     }
 }

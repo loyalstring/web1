@@ -1,6 +1,7 @@
 ﻿using JewelleryWebApplication.Interface;
 using JewelleryWebApplication.Models;
 using JewelleryWebApplication.Models.APIModel;
+using JewelleryWebApplication.Repository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,12 @@ namespace JewelleryWebApplication.Controllers
     [ApiController]
     public class DeviceController : ControllerBase
     {
+        public readonly ItblSecretRepository _tblSecretRepository;
         public readonly ItblProductDetailsRepository _productDetailsRepository;
         public readonly IDeviceRepository _deviceRepository;
-        public DeviceController(IDeviceRepository deviceRepository, ItblProductDetailsRepository productDetailsRepository)
+        public DeviceController(ItblSecretRepository tblSecretRepository, IDeviceRepository deviceRepository, ItblProductDetailsRepository productDetailsRepository)
         {
+            _tblSecretRepository = tblSecretRepository;
             _deviceRepository = deviceRepository;
             _productDetailsRepository = productDetailsRepository;
         }
@@ -54,48 +57,52 @@ namespace JewelleryWebApplication.Controllers
         {
             if (ModelState.IsValid)
             {
-                var datadevice = _deviceRepository.All().Where(x => x.Mobile == "8806588921" && x.Email == "vishwaspalve93@gmail.com" && x.SerialNo == "HC720E200901330").FirstOrDefault();
-                if (datadevice != null) { 
-                    List<tblProductsDetails> list = new List<tblProductsDetails>();
+                //  var datadevice = _deviceRepository.All().Where(x => x.Mobile == "8806588921" && x.Email == "vishwaspalve93@gmail.com" && x.SerialNo == "HC720E200901330").FirstOrDefault();
+                //   if (datadevice != null) { 
+                List<tblSecret> li = new List<tblSecret>();
+                List<tblProductsDetails> list = new List<tblProductsDetails>();
                     foreach (var item in products)
-                    {
+                    { tblSecret tblSecret=new tblSecret();
                         tblProductsDetails tblProductsDetails = new tblProductsDetails();
-                        tblProductsDetails.barcodeNumber = item.barcodeNumber;
-                        tblProductsDetails.mrp = item.mrp;
+                       // tblProductsDetails.createdDate = item.createdDate;
+                        tblProductsDetails.createdBy = item.createdBy;
+                        tblProductsDetails.tidValue = item.tidValue;
+                        tblProductsDetails.epcValue = item.epcValue;
+                        tblProductsDetails.category = item.category;
+                        tblProductsDetails.product = item.product;
                         tblProductsDetails.purity = item.purity;
-                        tblProductsDetails.fixedamount = item.fixedamount;
-                        tblProductsDetails.box = item.box;
-                        tblProductsDetails.fixedwastage = item.fixedwastage;
-                        tblProductsDetails.grossWeight = item.grossWeight;
+                        tblProductsDetails.barcodeNumber = item.barcodeNumber;
                         tblProductsDetails.itemCode = item.itemCode;
-                        tblProductsDetails.huidcode = item.huidcode;
+                        tblProductsDetails.box = item.box;
+                        tblProductsDetails.grossWeight = item.grossWeight;
+                        tblProductsDetails.netWeight = item.netWeight;
+                        tblProductsDetails.stoneweight = item.stoneweight;
                         tblProductsDetails.makinggm = item.makinggm;
                         tblProductsDetails.makingper = item.makingper;
-                        tblProductsDetails.netWeight = item.netWeight;
-                        tblProductsDetails.partycode = item.partycode;
-                        tblProductsDetails.stoneamount = item.stoneamount;
-                        tblProductsDetails.stoneweight = item.stoneweight;
-                    tblProductsDetails.DiamondWeight = item.DiamondWeight;
-                    tblProductsDetails.DiamondAmount= item.DiamondAmount;
-                    tblProductsDetails.DiamondSize= item.DiamondSize;
-                    tblProductsDetails.DiamondPeaces = item.DiamondPeaces;
-                    tblProductsDetails.Clarity=item.Clarity;
-                    tblProductsDetails.Certificate=item.Certificate;
-                    tblProductsDetails.DiamondRate=item.DiamondRate;
-                    tblProductsDetails.Colour=item.Colour;
-                    tblProductsDetails.Shape=item.Shape;
-                    tblProductsDetails.SettingType=item.SettingType;
-                 
+                    tblProductsDetails.fixedamount = item.fixedamount;
+                    tblProductsDetails.fixedwastage = item.fixedwastage;
+                    tblProductsDetails.stoneamount = item.stoneamount;
+                    tblProductsDetails.mrp = item.mrp;
+                    tblProductsDetails.hudicode = item.hudicode;
+                    tblProductsDetails.partycode = item.partycode;
+                    tblProductsDetails.updatedDate = item.updatedDate;
+                    tblProductsDetails.updatedBy = item.updatedBy;
+                    tblProductsDetails.tagstate = item.tagstate;
+                    tblProductsDetails.tagtransaction = item.tagtransaction;
+                        tblProductsDetails.status = item.status;
+                    tblSecret.TID = tblProductsDetails.tidValue;
+                    tblSecret.BarcodeNumber = tblProductsDetails.barcodeNumber;
                         list.Add(tblProductsDetails);
+                        li.Add(tblSecret);
                     }
                     await _productDetailsRepository.BulkInsertAsync(list);
-
+                await _tblSecretRepository.BulkInsertAsync(li);
                     return Ok(new { status = "Success", data = list });
-                }
-                else
-                {
-                    return Ok(new { message = "This device is not activate" });
-                }
+                //}
+                //else
+                //{
+                //    return Ok(new { message = "This device is not activate" });
+                //}
             }
             return BadRequest();
         }
