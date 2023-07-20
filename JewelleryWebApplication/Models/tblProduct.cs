@@ -79,5 +79,17 @@ namespace JewelleryWebApplication.Models
         public tblBox tblBox { get; set; }
         public string OnlineStatus { get; set; }
 
+        public string TID { get; set; }
+        public string BarcodeNumber { get; set; }
+        public string DiamondWeight { get; set; }
+        public string DiamondPeaces { get; set; }
+        public string DiamondRate { get; set; }
+        public string DiamondAmount { get; set; }
+        public string Colour { get; set; }
+        public string Clarity { get; set; }
+        public string SettingType { get; set; }
+        public string Shape { get; set; }
+        public string DiamondSize { get; set; }
+        public string Certificate { get; set; }
     }
 }

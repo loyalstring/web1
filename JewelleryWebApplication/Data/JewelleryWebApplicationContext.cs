@@ -31,6 +31,8 @@ namespace JewelleryWebApplication.Data
         public DbSet<tblCollection> tblCollection { get; set; }
         public DbSet<tblProductsDetails> tblProductsDetails { get; set; }
         public DbSet<OrderItemDetails> OrderItemDetails { get; set; }
+        public DbSet<tblSecret> tblSecret { get; set; }
+
 
     }
 }

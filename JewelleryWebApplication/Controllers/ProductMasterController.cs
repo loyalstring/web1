@@ -32,6 +32,7 @@ namespace JewelleryWebApplication.Controllers
     [ApiController]
     public class ProductMasterController : ControllerBase
     {
+        private readonly ItblSecretRepository _tblSecretRepository;
         private readonly ICollectionRepository _collectionRepository;
         public readonly IPartyMasterRepository _partyMasterRepository;
         public static IWebHostEnvironment _environment;
@@ -42,8 +43,9 @@ namespace JewelleryWebApplication.Controllers
         private readonly IProductRepository _productrepository;
         private readonly IBoxMasterRepository _boxmasterRepository;
         private readonly AzureOptions _azureOptions;
-        public ProductMasterController(ICollectionRepository collectionRepository, IPartyMasterRepository partyMasterRepository, IBoxMasterRepository boxMasterRepository, IOptions<AzureOptions> azureoptions, IWebHostEnvironment webHostEnvironment, IPurityRepository purityRepository, IProductRepository productRepository, IMaterialCategoryRepository materialCategoryRepository, IProductTypeRepository productTypeRepository, IStaffRepository staffRepository)
+        public ProductMasterController(ItblSecretRepository tblSecretRepository, ICollectionRepository collectionRepository, IPartyMasterRepository partyMasterRepository, IBoxMasterRepository boxMasterRepository, IOptions<AzureOptions> azureoptions, IWebHostEnvironment webHostEnvironment, IPurityRepository purityRepository, IProductRepository productRepository, IMaterialCategoryRepository materialCategoryRepository, IProductTypeRepository productTypeRepository, IStaffRepository staffRepository)
         {
+            _tblSecretRepository = tblSecretRepository;
             _collectionRepository = collectionRepository;
             _partyMasterRepository = partyMasterRepository;
             _boxmasterRepository = boxMasterRepository;
@@ -283,6 +285,7 @@ namespace JewelleryWebApplication.Controllers
 
             if (ModelState.IsValid)
             {
+                List<tblSecret> list = new List<tblSecret>();
                 List<tblProduct> li = new List<tblProduct>();
                 tblProduct products = new tblProduct();
 
@@ -354,6 +357,7 @@ namespace JewelleryWebApplication.Controllers
                     {
                         string lable = productlabel + x;
                         x++;
+                        tblSecret tblSecret = new tblSecret();
                         tblProduct product = new tblProduct();
                         product.Images = data;
                         product.Entryby_Staff_id = Convert.ToInt32(HttpContext.Request.Form["Entryby_Staff_id"]);
@@ -394,10 +398,24 @@ namespace JewelleryWebApplication.Controllers
                         product.ImageList5 = HttpContext.Request.Form["ImageList5"];
                         product.CollectionId= Convert.ToInt32(HttpContext.Request.Form["CollectionId"]);
                         product.OnlineStatus = "Active";
-                    
+                        product.TID = HttpContext.Request.Form["TID"];
+                        product.BarcodeNumber = HttpContext.Request.Form["BarcodeNumber"];
+                        product.DiamondWeight = HttpContext.Request.Form["DiamondWeight"];
+                        product.DiamondAmount = HttpContext.Request.Form["DiamondAmount"];
+                        product.DiamondSize = HttpContext.Request.Form["DiamondSize"];
+                        product.DiamondPeaces = HttpContext.Request.Form["DiamondPeaces"];
+                        product.Clarity = HttpContext.Request.Form["Clarity"];
+                        product.Certificate = HttpContext.Request.Form["Certificate"];
+                        product.DiamondRate = HttpContext.Request.Form["DiamondRate"];
+                        product.Colour = HttpContext.Request.Form["Colour"];
+                        product.Shape = HttpContext.Request.Form["Shape"];
+                        product.SettingType = HttpContext.Request.Form["SettingType"];
+                        tblSecret.TID=product.TID;
+                        tblSecret.BarcodeNumber=product.BarcodeNumber;
                         li.Add(product);
+                        list.Add(tblSecret);
                     }
-
+                    await _tblSecretRepository.BulkInsertAsync(list);
                     await _productrepository.BulkInsertAsync(li);
                     return Ok(new { status = "Success", data = li });
                 }
@@ -659,10 +677,13 @@ namespace JewelleryWebApplication.Controllers
 
                 foreach (var model in list)
                 {
+                    tblSecret tblSecret1 = new tblSecret();
                     tblProduct product = new tblProduct();
+                    var secrets = _tblSecretRepository.All().Where(x => x.TID == model.TID).FirstOrDefault();
                     var products = _productrepository.All().Where(x => x.Id == model.Id).FirstOrDefault();
                     if (products != null)
                     {
+                        tblSecret1.Id = secrets.Id;
                         product.Id = model.Id;
                         product.Entryby_Staff_id = model.Entryby_Staff_id;
 
@@ -740,9 +761,23 @@ namespace JewelleryWebApplication.Controllers
                         product.CreatedOn = model.CreatedOn;
 
                         product.Images = model.Images;
+                        product.DiamondWeight = model.DiamondWeight;
+                        product.DiamondAmount = model.DiamondAmount;
+                        product.DiamondSize = model.DiamondSize;
+                        product.DiamondPeaces = model.DiamondPeaces;
+                        product.Clarity = model.Clarity;
+                        product.Certificate = model.Certificate;
+                        product.DiamondRate = model.DiamondRate;
+                        product.Colour = model.Colour;
+                        product.Shape = model.Shape;
+                        product.SettingType = model.SettingType;
+                        product.TID = model.TID;
+                        product.BarcodeNumber = model.BarcodeNumber;
                         product.OnlineStatus = "Active";
-
+                        tblSecret1.TID = product.TID;
+                        tblSecret1.BarcodeNumber= product.BarcodeNumber;
                         await _productrepository.UpdateAsync(product, product.Id);
+                        await _tblSecretRepository.UpdateAsync(tblSecret1, tblSecret1.Id);
                     }
 
                 }
