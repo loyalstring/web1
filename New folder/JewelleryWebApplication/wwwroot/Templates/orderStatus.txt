@@ -1,0 +1,102 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="telephone=no" name="format-detection">
+    <title></title>
+    <style type="text/css">
+    a {text-decoration: none;}
+    .container{
+    background-color:#fffff
+    }
+    </style>
+</head>
+<body>
+    <div class="es-wrapper-color">
+        <table class="es-wrapper card m-3" width="100%" cellspacing="10" cellpadding="3" align="Center" bgcolor="#ffffff">
+            <tbody>
+                <tr style="outline:1px thin ">
+                    <td class="esd-email-paddings" valign="top">
+                        <div class="container">
+                            <table class="es-content" cellspacing="0" cellpadding="0" align="center">
+                                <tbody>
+                                    <tr>
+                                        <td class="esd-stripe" align="center">
+                                            <table class="es-content-body" style="background-color:#ffffff ; box-shadow: 3px 4px 8px 3px rgba(0,0,0,0.2);"  width="400" cellspacing="0" cellpadding="0" align="center">
+                                                <tbody>
+                                                    <tr>
+                                                        <td  class="esd-structure" align="left">
+                                                            <table width="100%" cellspacing="0" cellpadding="3">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td bgcolor="#f4f4f4" class="esd-container-frame" width="200" valign="top" align="center">
+                                                                            <table style="border-radius: 4px; border-collapse: separate; background-color: #ffffff;" width="100%" cellspacing="10" cellpadding="20" bgcolor="#ffffff">
+                                                                                <tbody>
+                                                                                   
+                                                                                    <tr>
+                                                                                        <td class="esd-block-text es-p35t es-p5b es-p30r es-p30l" align="center" style="padding-top: 0px;">
+                                                                                            <h1>Welcome!! </h1>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                    <tr>
+                                                                                        <td class="esd-block-text es-p20t es-p20b es-p30r es-p30l es-m-txt-l" bgcolor="#ffffff" align="left" style="padding-bottom: 0px;padding-top: 0px;">
+                                                                                            <p>Hello <b>XXXXNameXXX</b>,</p>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                    <tr>
+                                                                                        <td class="esd-block-text es-p20t es-p30r es-p30l es-m-txt-l" align="left">
+                                                                                            <p>Team Loyalstring,</p> <p>welcomes you. Thanks for choosing LoyalString Services </p>
+                                                                                            <p>your order has been sucessfully Created</p>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                   <table style="width=100%;cellspacing=0;cellpadding=2" class="table-bordered">
+                                                                                    <thead>
+                                                                                    <th>OrderNo</th>
+                                                                                    <th> name</th>
+                                                                                    <th>Amount</th>
+                                                                                    <th> status</th>
+                                                                                    </thead>
+                                                                                    <tr>
+                                                                                    <td>XXXXorderXXX</td>
+                                                                                    <td>XXXXNameXXX</td>
+                                                                                    <td>XXXXvalueXXX</td>
+                                                                                    <td>XXXStatusXXX</td>
+                                                                                    </tr>
+                                                                                    </table>
+                                                                                    <tr>
+                                                                                        <td class="esd-block-text es-p20t es-p40b es-p30r es-p30l es-m-txt-l" align="left">
+                                                                                            <p style="margin-bottom:0px">Thanking You,</p>
+                                                                                            <p style="margin-top:0px">Team LoyalString </p>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </tbody>
+                                                                                <tfoot>
+                                                                                    <tr>
+                                                                                        <td class="esd-block-text es-p30t es-p30r es-p30l" bgcolor="#ffdc7d" align="center">
+                                                                                            Please confirm your account by <a href='callbackUrl'>clicking here</a>.
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </tfoot>
+                                                                            </table>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
