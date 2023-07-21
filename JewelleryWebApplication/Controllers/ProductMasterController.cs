@@ -31,7 +31,7 @@ namespace JewelleryWebApplication.Controllers
     [Route("api/[controller]")]
     [ApiController]
     public class ProductMasterController : ControllerBase
-    {
+    { private readonly ItblProductDetailsRepository _productDetailsRepository;
         private readonly ItblSecretRepository _tblSecretRepository;
         private readonly ICollectionRepository _collectionRepository;
         public readonly IPartyMasterRepository _partyMasterRepository;
@@ -43,9 +43,10 @@ namespace JewelleryWebApplication.Controllers
         private readonly IProductRepository _productrepository;
         private readonly IBoxMasterRepository _boxmasterRepository;
         private readonly AzureOptions _azureOptions;
-        public ProductMasterController(ItblSecretRepository tblSecretRepository, ICollectionRepository collectionRepository, IPartyMasterRepository partyMasterRepository, IBoxMasterRepository boxMasterRepository, IOptions<AzureOptions> azureoptions, IWebHostEnvironment webHostEnvironment, IPurityRepository purityRepository, IProductRepository productRepository, IMaterialCategoryRepository materialCategoryRepository, IProductTypeRepository productTypeRepository, IStaffRepository staffRepository)
+        public ProductMasterController(ItblProductDetailsRepository productDetailsRepository, ItblSecretRepository tblSecretRepository, ICollectionRepository collectionRepository, IPartyMasterRepository partyMasterRepository, IBoxMasterRepository boxMasterRepository, IOptions<AzureOptions> azureoptions, IWebHostEnvironment webHostEnvironment, IPurityRepository purityRepository, IProductRepository productRepository, IMaterialCategoryRepository materialCategoryRepository, IProductTypeRepository productTypeRepository, IStaffRepository staffRepository)
         {
-            _tblSecretRepository = tblSecretRepository;
+              _tblSecretRepository = tblSecretRepository;
+            _productDetailsRepository = productDetailsRepository;
             _collectionRepository = collectionRepository;
             _partyMasterRepository = partyMasterRepository;
             _boxmasterRepository = boxMasterRepository;
@@ -668,22 +669,26 @@ namespace JewelleryWebApplication.Controllers
 
         }
 
-        [HttpPost("BulkUpdateProduct")]
+         [HttpPost("BulkUpdateProduct")]
         public async Task<IActionResult> BulkUpdateProduct(List<tblProduct> list)
         {
 
             if (ModelState.IsValid)
             {
-
+                List<tblProductsDetails> list1 = new List<tblProductsDetails>();
+                List<tblSecret> secretlist = new List<tblSecret>();
                 foreach (var model in list)
                 {
+
+                    tblProductsDetails tblProductsDetails = new tblProductsDetails();
                     tblSecret tblSecret1 = new tblSecret();
                     tblProduct product = new tblProduct();
-                    var secrets = _tblSecretRepository.All().Where(x => x.TID == model.TID).FirstOrDefault();
+                 
                     var products = _productrepository.All().Where(x => x.Id == model.Id).FirstOrDefault();
                     if (products != null)
                     {
-                        tblSecret1.Id = secrets.Id;
+                       var boxdata=_boxmasterRepository.All().Where(x => x.Id==model.BoxId).FirstOrDefault();
+                        var partydata = _partyMasterRepository.All().Where(x => x.Id == model.PartyTypeId).FirstOrDefault();
                         product.Id = model.Id;
                         product.Entryby_Staff_id = model.Entryby_Staff_id;
 
@@ -771,15 +776,44 @@ namespace JewelleryWebApplication.Controllers
                         product.Colour = model.Colour;
                         product.Shape = model.Shape;
                         product.SettingType = model.SettingType;
-                        product.TID = model.TID;
-                        product.BarcodeNumber = model.BarcodeNumber;
+                       
                         product.OnlineStatus = "Active";
-                        tblSecret1.TID = product.TID;
-                        tblSecret1.BarcodeNumber= product.BarcodeNumber;
+                        tblProductsDetails.tidValue = "";
+                        tblSecret1.BarcodeNumber=tblSecret1.BarcodeNumber;
+                          tblProductsDetails.createdBy = "";
+                        tblProductsDetails.tidValue = "";
+                        tblProductsDetails.epcValue = "";
+                        tblProductsDetails.category = product.Category_Name;
+                        tblProductsDetails.product = product.Product_Name;
+                        tblProductsDetails.purity = product.purity;
+                        tblProductsDetails.barcodeNumber = "";
+                        tblProductsDetails.itemCode =product.ItemCode;
+                        tblProductsDetails.box = boxdata.BoxName;
+                        tblProductsDetails.grossWeight = product.grosswt;
+                        tblProductsDetails.netWeight = product.NetWt;
+                        tblProductsDetails.stoneweight = Convert.ToDecimal(product.StoneWeight);
+                        tblProductsDetails.makinggm = product.Making_per_gram;
+                        tblProductsDetails.makingper = product.Making_Percentage;
+                    tblProductsDetails.fixedamount = product.Making_Fixed_Amt;
+                    tblProductsDetails.fixedwastage = product.Making_Fixed_Wastage;
+                    tblProductsDetails.stoneamount = product.StoneAmount;
+                    tblProductsDetails.mrp = product.MRP.ToString();
+                    tblProductsDetails.hudicode = product.HUIDCode;
+                    tblProductsDetails.partycode = partydata.supplier_code;
+                    tblProductsDetails.updatedDate = product.LastUpdated.ToString();
+                    tblProductsDetails.updatedBy = "";
+                    tblProductsDetails.tagstate = "";
+                    tblProductsDetails.tagtransaction = "";
+                        tblProductsDetails.status = "";
+                        
+                        tblProductsDetails.barcodeNumber = product.BarcodeNumber;
+                        secretlist.Add(tblSecret1);
+                        list1.Add(tblProductsDetails);
                         await _productrepository.UpdateAsync(product, product.Id);
-                        await _tblSecretRepository.UpdateAsync(tblSecret1, tblSecret1.Id);
+                      
                     }
-
+                    await _tblSecretRepository.BulkInsertAsync(secretlist);
+                    await _productDetailsRepository.BulkInsertAsync(list1);
                 }
                 //  await _productrepository.BulkUpdateAsync(list);
                 return Ok(new { status = "Success", data = list });
