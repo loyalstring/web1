@@ -4,7 +4,7 @@ namespace JewelleryWebApplication.Models
 {
     public class tblProductsDetails : BaseModel
     {
-        public string createdDate { get; set; }
+      
         public string createdBy { get; set; }
         public string tidValue { get; set; }
         public string epcValue { get; set; }
