@@ -14,9 +14,9 @@ namespace JewelleryWebApplication.Models
         public string barcodeNumber { get; set; }
         public string itemCode { get; set; }
         public string box { get; set; }
-        public double grossWeight { get; set; }
-        public double netWeight { get; set; }
-        public double stoneweight { get; set; }
+        public decimal grossWeight { get; set; }
+        public decimal netWeight { get; set; }
+        public decimal stoneweight { get; set; }
         public string makinggm { get; set; }
         public string makingper { get; set; }
         public string fixedamount { get; set; }
