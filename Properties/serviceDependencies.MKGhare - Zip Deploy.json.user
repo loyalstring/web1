@@ -1,0 +1,38 @@
+{
+  "dependencies": {
+    "apis1": {
+      "restored": true,
+      "restoreTime": "2023-06-17T07:48:56.2764789Z"
+    },
+    "secrets1": {
+      "restored": true,
+      "restoreTime": "2023-06-19T07:24:59.6953116Z"
+    },
+    "storage1": {
+      "restored": true,
+      "restoreTime": "2023-06-17T09:22:53.2353585Z"
+    }
+  },
+  "parameters": {
+    "storage1.resourceGroupName": {
+      "Name": "storage1.resourceGroupName",
+      "Type": "resourceGroup",
+      "Value": "MKGhare"
+    },
+    "apis1.resourceGroupName": {
+      "Name": "apis1.resourceGroupName",
+      "Type": "resourceGroup",
+      "Value": "MKGhare"
+    },
+    "apis1.subscriptionId": {
+      "Name": "apis1.subscriptionId",
+      "Type": "subscription",
+      "Value": "8fd3facc-f009-4480-b6df-6512ee24bd57"
+    },
+    "storage1.subscriptionId": {
+      "Name": "storage1.subscriptionId",
+      "Type": "subscription",
+      "Value": "8fd3facc-f009-4480-b6df-6512ee24bd57"
+    }
+  }
+}

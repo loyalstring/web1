@@ -1,0 +1,45 @@
+﻿@page
+@model JewelleryWebApplication.Views.ConfirmEmailModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0, user-scalable=0'>
+    <!-- Title -->
+    <title>Confirm email</title>
+    <!-- Bootstrap css -->
+    <link href="~/theme/assets/plugins/bootstrap/css/bootstrap.css" rel="stylesheet" />
+    <!-- Style css -->
+    <link href="~/theme/assets/css/style.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div class="page login-bg">
+        <div class="page-single">
+            <div class="container">
+                <div class="row">
+                    <div class="col mx-auto">
+                        <div class="row justify-content-center">
+                            <div class="col-md-7 col-lg-5">
+                                <div class="card">
+                                    <div class="p-4 pt-6 text-center">
+                                        <h1 class="mb-2">Confirm email</h1>
+                                    </div>
+                                    <div id="account" class="card-body">
+                                        <partial name="_StatusMessage" model="Model.StatusMessage" />
+                                        <div class="text-center mt-3">
+                                            <p class="text-dark mb-0"><a class="text-primary ms-1" asp-page="./Login">Click here to login</a></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

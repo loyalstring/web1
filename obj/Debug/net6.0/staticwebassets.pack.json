@@ -1,0 +1,69 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\LOYAL STRING INTERNATIONAL\\Vishwas\\JewelleryWebApplication\\JewelleryWebApplication\\wwwroot\\Logo\\gharesNewLogo2.png",
+      "PackagePath": "staticwebassets\\Logo\\gharesNewLogo2.png"
+    },
+    {
+      "Id": "C:\\LOYAL STRING INTERNATIONAL\\Vishwas\\JewelleryWebApplication\\JewelleryWebApplication\\wwwroot\\Templates\\ConfirmAccount.html",
+      "PackagePath": "staticwebassets\\Templates\\ConfirmAccount.html"
+    },
+    {
+      "Id": "C:\\LOYAL STRING INTERNATIONAL\\Vishwas\\JewelleryWebApplication\\JewelleryWebApplication\\wwwroot\\Templates\\Invoice.html",
+      "PackagePath": "staticwebassets\\Templates\\Invoice.html"
+    },
+    {
+      "Id": "C:\\LOYAL STRING INTERNATIONAL\\Vishwas\\JewelleryWebApplication\\JewelleryWebApplication\\wwwroot\\Templates\\OrderConfirmation.html",
+      "PackagePath": "staticwebassets\\Templates\\OrderConfirmation.html"
+    },
+    {
+      "Id": "C:\\LOYAL STRING INTERNATIONAL\\Vishwas\\JewelleryWebApplication\\JewelleryWebApplication\\wwwroot\\Templates\\OrderDelivered.html",
+      "PackagePath": "staticwebassets\\Templates\\OrderDelivered.html"
+    },
+    {
+      "Id": "C:\\LOYAL STRING INTERNATIONAL\\Vishwas\\JewelleryWebApplication\\JewelleryWebApplication\\wwwroot\\Templates\\PaymentFailed.html",
+      "PackagePath": "staticwebassets\\Templates\\PaymentFailed.html"
+    },
+    {
+      "Id": "C:\\LOYAL STRING INTERNATIONAL\\Vishwas\\JewelleryWebApplication\\JewelleryWebApplication\\wwwroot\\Templates\\Registered.html",
+      "PackagePath": "staticwebassets\\Templates\\Registered.html"
+    },
+    {
+      "Id": "C:\\LOYAL STRING INTERNATIONAL\\Vishwas\\JewelleryWebApplication\\JewelleryWebApplication\\wwwroot\\Templates\\css\\site.css",
+      "PackagePath": "staticwebassets\\Templates\\css\\site.css"
+    },
+    {
+      "Id": "C:\\LOYAL STRING INTERNATIONAL\\Vishwas\\JewelleryWebApplication\\JewelleryWebApplication\\wwwroot\\Templates\\orderOnTheWay.html",
+      "PackagePath": "staticwebassets\\Templates\\orderOnTheWay.html"
+    },
+    {
+      "Id": "C:\\LOYAL STRING INTERNATIONAL\\Vishwas\\JewelleryWebApplication\\JewelleryWebApplication\\wwwroot\\Templates\\orderStatus.txt",
+      "PackagePath": "staticwebassets\\Templates\\orderStatus.txt"
+    },
+    {
+      "Id": "C:\\LOYAL STRING INTERNATIONAL\\Vishwas\\JewelleryWebApplication\\JewelleryWebApplication\\wwwroot\\Templates\\rating.html",
+      "PackagePath": "staticwebassets\\Templates\\rating.html"
+    },
+    {
+      "Id": "C:\\LOYAL STRING INTERNATIONAL\\Vishwas\\JewelleryWebApplication\\JewelleryWebApplication\\wwwroot\\Templates\\test.txt",
+      "PackagePath": "staticwebassets\\Templates\\test.txt"
+    },
+    {
+      "Id": "obj\\Debug\\net6.0\\staticwebassets\\msbuild.JewelleryWebApplication.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net6.0\\staticwebassets\\msbuild.build.JewelleryWebApplication.props",
+      "PackagePath": "build\\JewelleryWebApplication.props"
+    },
+    {
+      "Id": "obj\\Debug\\net6.0\\staticwebassets\\msbuild.buildMultiTargeting.JewelleryWebApplication.props",
+      "PackagePath": "buildMultiTargeting\\JewelleryWebApplication.props"
+    },
+    {
+      "Id": "obj\\Debug\\net6.0\\staticwebassets\\msbuild.buildTransitive.JewelleryWebApplication.props",
+      "PackagePath": "buildTransitive\\JewelleryWebApplication.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

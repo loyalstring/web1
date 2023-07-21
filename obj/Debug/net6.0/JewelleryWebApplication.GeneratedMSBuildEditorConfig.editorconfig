@@ -1,0 +1,29 @@
+is_global = true
+build_property.TargetFramework = net6.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = JewelleryWebApplication
+build_property.RootNamespace = JewelleryWebApplication
+build_property.ProjectDir = C:\LOYAL STRING INTERNATIONAL\Vishwas\NDDARBAR\JewelleryWebApplication\JewelleryWebApplication\
+build_property.RazorLangVersion = 6.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = C:\LOYAL STRING INTERNATIONAL\Vishwas\NDDARBAR\JewelleryWebApplication\JewelleryWebApplication
+build_property._RazorSourceGeneratorDebug = 
+
+[C:/LOYAL STRING INTERNATIONAL/Vishwas/NDDARBAR/JewelleryWebApplication/JewelleryWebApplication/Views/ConfirmAccount.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29uZmlybUFjY291bnQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/LOYAL STRING INTERNATIONAL/Vishwas/NDDARBAR/JewelleryWebApplication/JewelleryWebApplication/Views/ConfirmEmail.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29uZmlybUVtYWlsLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/LOYAL STRING INTERNATIONAL/Vishwas/NDDARBAR/JewelleryWebApplication/JewelleryWebApplication/Views/EmailButton.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1haWxCdXR0b24uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
