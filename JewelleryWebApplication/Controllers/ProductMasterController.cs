@@ -813,9 +813,10 @@ namespace JewelleryWebApplication.Controllers
                         await _productrepository.UpdateAsync(product, product.Id);
                       
                     }
-                    await _tblSecretRepository.BulkInsertAsync(secretlist);
-                    await _productDetailsRepository.BulkInsertAsync(list1);
+                  
                 }
+                await _tblSecretRepository.BulkInsertAsync(secretlist);
+                await _productDetailsRepository.BulkInsertAsync(list1);
                 //  await _productrepository.BulkUpdateAsync(list);
                 return Ok(new { status = "Success", data = list });
             }
